@@ -1,0 +1,206 @@
+'use client'
+
+import { getVariantBySKU } from '@/actions/pos'
+import Scanner from '@/components/pos/scanner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import CheckoutDialog from '@/components/pos/checkout-dialog'
+import { ShoppingCart, Trash2, Plus, Minus, Scan } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { useAppStore } from '@/store/use-app-store'
+
+export default function POSView() {
+  const cart = useAppStore((state) => state.cart)
+  const addItemToCart = useAppStore((state) => state.addItemToCart)
+  const updateQuantity = useAppStore((state) => state.updateQuantity)
+  const removeItem = useAppStore((state) => state.removeItem)
+  const clearCart = useAppStore((state) => state.clearCart)
+
+  const [manualSku, setManualSku] = useState('')
+  const [isScanning, setIsScanning] = useState(false)
+
+  const handleAddItem = useCallback(async (sku: string) => {
+    const existingItem = cart.find((item) => item.sku === sku)
+    if (existingItem) {
+      updateQuantity(sku, 1)
+      return
+    }
+
+    const result = await getVariantBySKU(sku)
+    if (result.success && result.data) {
+      const v = result.data
+      addItemToCart({
+        variantId: v.id,
+        sku: v.sku,
+        name: v.product.name,
+        variantInfo: `${v.size?.name || ''} ${v.color || ''}`.trim(),
+        price: Number(v.basePrice),
+        quantity: 1,
+      })
+    } else {
+      alert('Product not found: ' + sku)
+    }
+  }, [cart, addItemToCart, updateQuantity])
+
+  const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (manualSku) {
+      handleAddItem(manualSku)
+      setManualSku('')
+    }
+  }
+
+  const handleScanSuccess = useCallback((text: string) => {
+    handleAddItem(text)
+    setIsScanning(false)
+  }, [handleAddItem])
+
+  return (
+    <div className="flex flex-col gap-4 p-4 lg:p-8 min-h-screen animate-in fade-in duration-500">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">Register</h2>
+        <div className="flex items-center space-x-2">
+          <Button variant={isScanning ? "destructive" : "default"} onClick={() => setIsScanning(!isScanning)} size="sm">
+            <Scan className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">{isScanning ? "Stop Scanning" : "Start Scanning"}</span>
+            <span className="sm:hidden">{isScanning ? "Stop" : "Scan"}</span>
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid flex-1 gap-6 grid-cols-1 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
+          <Card className="flex flex-col h-full min-h-[400px] glass-card">
+            <CardHeader className="p-4 border-b border-border/50">
+              <CardTitle className="flex items-center text-lg">
+                <ShoppingCart className="mr-2 h-5 w-5" /> Current Sale
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-auto p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="pl-4">Product</TableHead>
+                    <TableHead className="hidden sm:table-cell">Price</TableHead>
+                    <TableHead>Qty</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead className="pr-4"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cart.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-64 text-center text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center space-y-2">
+                          <ShoppingCart className="h-12 w-12 opacity-20" />
+                          <p>No items in cart. Scan or enter SKU to add.</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    cart.map((item) => (
+                      <TableRow key={item.sku} className="group transition-colors">
+                        <TableCell className="pl-4">
+                          <div className="font-medium text-sm sm:text-base">{item.name}</div>
+                          <div className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[150px]">
+                            {item.sku} {item.variantInfo && `• ${item.variantInfo}`}
+                          </div>
+                          <div className="sm:hidden text-xs font-medium mt-1">
+                            ${item.price.toFixed(2)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">${item.price.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            <Button variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => updateQuantity(item.sku, -1)}>
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-4 sm:w-8 text-center text-sm font-bold">{item.quantity}</span>
+                            <Button variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => updateQuantity(item.sku, 1)}>
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-bold text-sm sm:text-base">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="pr-4">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeItem(item.sku)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-4 order-1 lg:order-2">
+          {isScanning && (
+            <Card className="glass-card border-primary/50 overflow-hidden">
+              <CardHeader className="p-4 bg-primary/5">
+                <CardTitle className="text-sm font-bold flex items-center">
+                  <Scan className="mr-2 h-4 w-4 animate-pulse" /> Live Scanner
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <Scanner onScanSuccess={handleScanSuccess} />
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="glass-card">
+            <CardHeader className="p-4">
+              <CardTitle className="text-sm font-medium">Add Item</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <form onSubmit={handleManualSubmit} className="flex space-x-2">
+                <Input 
+                  placeholder="SKU..." 
+                  value={manualSku}
+                  onChange={(e) => setManualSku(e.target.value)}
+                  className="h-9 focus-visible:ring-primary"
+                />
+                <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90">Add</Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-primary text-primary-foreground shadow-2xl border-none">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm font-medium opacity-80 text-center uppercase tracking-[0.2em]">Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-6 text-center">
+              <div className="flex flex-col items-center justify-center py-4">
+                <span className="text-xs uppercase opacity-70 mb-1">Total Amount</span>
+                <span className="text-5xl lg:text-6xl font-black tabular-nums tracking-tight">
+                  <span className="text-2xl font-normal opacity-70 mr-1">$</span>
+                  {total.toFixed(2)}
+                </span>
+              </div>
+              <CheckoutDialog 
+                total={total} 
+                items={cart.map(i => ({ variantId: i.variantId, quantity: i.quantity, price: i.price }))}
+                onSuccess={() => clearCart()}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
