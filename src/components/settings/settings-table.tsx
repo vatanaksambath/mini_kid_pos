@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { deleteSetting } from '@/actions/settings'
+import { useAppStore } from '@/store/use-app-store'
 
 interface SettingsTableProps {
   title: string
@@ -32,6 +33,7 @@ interface SettingsTableProps {
 }
 
 export default function SettingsTable({ title, type, data, onCreate, onUpdate, onRefresh }: SettingsTableProps) {
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState<{ id: string; name: string; hex?: string } | null>(null)
@@ -70,7 +72,7 @@ export default function SettingsTable({ title, type, data, onCreate, onUpdate, o
         setModalOpen(false)
         onRefresh()
       } else {
-        alert(res.error)
+        showGlobalAlert('error', 'Error', res.error || 'Operation failed')
       }
     })
   }
@@ -81,7 +83,7 @@ export default function SettingsTable({ title, type, data, onCreate, onUpdate, o
     if (res.success) {
       onRefresh()
     } else {
-      alert(res.error)
+      showGlobalAlert('error', 'Error', res.error || 'Operation failed')
     }
   }
 

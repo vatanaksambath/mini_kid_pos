@@ -26,7 +26,7 @@ export function buildReceiptHtml(order: any, template: any, excRate: number): st
     <tr>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;vertical-align:top;">${i + 2}</td>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;">
-        <div class="bold">${item.name || item.sku || '—'}</div>
+        <div class="bold">${item.name || item.sku || ''}</div>
         ${item.description ? `<div style="font-size:9px;color:#666;font-style:italic;">${item.description}</div>` : ''}
       </td>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;text-align:center;vertical-align:top;">${item.quantity}</td>

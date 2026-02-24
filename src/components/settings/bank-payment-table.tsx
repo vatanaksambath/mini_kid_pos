@@ -17,6 +17,7 @@ import { Trash2, Edit, Plus, Upload, Banknote, CreditCard, Smartphone, Gift } fr
 import { useState, useTransition } from 'react'
 import { createBankPaymentType, updateBankPaymentType, deleteSetting } from '@/actions/settings'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/use-app-store'
 
 type DBPaymentType = 'CASH' | 'CARD' | 'GIFT_CARD' | 'MOBILE_PAYMENT'
 
@@ -45,6 +46,7 @@ const typeIcon = (type: DBPaymentType) => {
 export default function BankPaymentTable({
   data, onRefresh,
 }: { data: PaymentMethod[]; onRefresh: () => void }) {
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState<PaymentMethod | null>(null)
@@ -84,7 +86,7 @@ export default function BankPaymentTable({
         ? await updateBankPaymentType(editItem.id, payload)
         : await createBankPaymentType(payload)
       if (res.success) { setModalOpen(false); onRefresh() }
-      else alert(res.error)
+      else showGlobalAlert('error', 'Error', res.error || 'Operation failed')
     })
   }
 
@@ -92,7 +94,7 @@ export default function BankPaymentTable({
     if (!confirm('Delete this payment method?')) return
     const res = await deleteSetting('bank', id)
     if (res.success) onRefresh()
-    else alert(res.error)
+    else showGlobalAlert('error', 'Error', res.error || 'Operation failed')
   }
 
   const handleToggleActive = (item: PaymentMethod) => {

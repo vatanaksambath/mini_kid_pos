@@ -13,6 +13,7 @@ import { Plus, Trash2, Share2, MapPin, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useTransition, useCallback } from 'react'
 import dynamic from 'next/dynamic'
+import { useAppStore } from '@/store/use-app-store'
 
 import type { ComponentType } from 'react'
 
@@ -38,6 +39,7 @@ interface CustomerModalProps {
 
 export default function CustomerModal({ customer, open: externalOpen, onOpenChange, trigger, onSuccess }: CustomerModalProps) {
   const router = useRouter()
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [internalOpen, setInternalOpen] = useState(false)
 
@@ -95,7 +97,7 @@ export default function CustomerModal({ customer, open: externalOpen, onOpenChan
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name) return alert('Name is required')
+    if (!name) return showGlobalAlert('warning', 'Validation Error', 'Name is required')
 
     startTransition(async () => {
       let result
@@ -114,7 +116,7 @@ export default function CustomerModal({ customer, open: externalOpen, onOpenChan
         if (onSuccess) onSuccess()
         router.refresh()
       } else {
-        alert(result.error)
+        showGlobalAlert('error', 'Error', result.error || 'Operation failed')
       }
     })
   }

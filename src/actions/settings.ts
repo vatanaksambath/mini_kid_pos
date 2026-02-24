@@ -319,6 +319,8 @@ export async function upsertReceiptTemplate(data: {
   bottomMessage?: string
   exchangeRate?: number
   defaultDeliveryPrice?: number
+  loyaltyEarnRate?: number
+  loyaltyRedeemValue?: number
 }) {
   try {
     const { error } = await supabase.from('ReceiptTemplate').upsert({ id: 'default', ...data, updatedAt: new Date().toISOString() })

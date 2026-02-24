@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Edit, Plus, Gift } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { createLoyaltyPrize, updateLoyaltyPrize, deleteLoyaltyPrize } from '@/actions/settings'
+import { useAppStore } from '@/store/use-app-store'
 
 interface Prize {
   id: string
@@ -31,6 +32,7 @@ interface Prize {
 }
 
 export default function LoyaltyPrizeTable({ data, onRefresh }: { data: Prize[]; onRefresh: () => void }) {
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState<Prize | null>(null)
@@ -71,7 +73,7 @@ export default function LoyaltyPrizeTable({ data, onRefresh }: { data: Prize[]; 
         setModalOpen(false)
         onRefresh()
       } else {
-        alert(res.error)
+        showGlobalAlert('error', 'Error', res.error || 'Operation failed')
       }
     })
   }
@@ -82,7 +84,7 @@ export default function LoyaltyPrizeTable({ data, onRefresh }: { data: Prize[]; 
     if (res.success) {
       onRefresh()
     } else {
-      alert(res.error)
+      showGlobalAlert('error', 'Error', res.error || 'Operation failed')
     }
   }
 

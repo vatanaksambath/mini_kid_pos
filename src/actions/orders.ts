@@ -1,7 +1,7 @@
 'use server'
 
 import { supabase } from '@/lib/supabase'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 
@@ -24,6 +24,7 @@ export async function createOrder(data: {
     bankPaymentTypeId?: string
   }[]
   shippingFee?: number
+  status?: 'PENDING' | 'COMPLETED'
 }) {
   try {
     // Resolve authenticated user from JWT cookie
@@ -57,7 +58,7 @@ export async function createOrder(data: {
         shippingFee: data.shippingFee || 0,
         discountAmount: data.discountAmount || 0,
         discountType: data.discountType || 'none',
-        status: 'COMPLETED',
+        status: data.status || 'COMPLETED',
       })
       .select()
       .single()
@@ -120,8 +121,16 @@ export async function createOrder(data: {
         .eq('id', data.customerId)
         .single()
 
+      const { data: template } = await supabase
+        .from('ReceiptTemplate')
+        .select('loyaltyEarnRate')
+        .eq('id', 'default')
+        .single()
+      
+      const earnRate = template?.loyaltyEarnRate ?? 1
+
       if (customer) {
-        const earned = Math.floor(data.totalAmount)
+        const earned = Math.floor(data.totalAmount * earnRate)
         const redeemed = data.loyaltyPointsRedeemed || 0
         const newPoints = Math.max(0, customer.loyaltyPoints + earned - redeemed)
         await supabase
@@ -248,6 +257,7 @@ export async function updateCustomer(id: string, data: any) {
 }
 
 export async function getOrders() {
+  noStore();
   try {
     const { data, error } = await supabase
       .from('Order')

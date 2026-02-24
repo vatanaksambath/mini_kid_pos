@@ -191,7 +191,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name) return alert('Name is required')
+    if (!name) return showGlobalAlert('warning', 'Validation Error', 'Name is required')
 
     const formattedVariants = variants.map((v) => ({
       id: v.id,

@@ -9,6 +9,7 @@ interface CartItem {
   variantInfo: string
   price: number
   quantity: number
+  availableStock?: number
 }
 
 interface AppState {

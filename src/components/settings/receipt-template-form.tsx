@@ -9,8 +9,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Save, Upload, Store, Phone, MapPin, CreditCard, MessageSquare, RefreshCw } from 'lucide-react'
 import { useState, useEffect, useTransition } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useAppStore } from '@/store/use-app-store'
 
 export default function ReceiptTemplateForm() {
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [loading, setLoading] = useState(true)
 
@@ -27,6 +29,8 @@ export default function ReceiptTemplateForm() {
   const [bottomMessage, setBottomMessage] = useState('Thank you for shopping with us!')
   const [exchangeRate, setExchangeRate] = useState('4100')
   const [defaultDeliveryPrice, setDefaultDeliveryPrice] = useState('0')
+  const [loyaltyEarnRate, setLoyaltyEarnRate] = useState('1')
+  const [loyaltyRedeemValue, setLoyaltyRedeemValue] = useState('0.01')
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
@@ -46,6 +50,8 @@ export default function ReceiptTemplateForm() {
         setBottomMessage(t.bottomMessage || 'Thank you for shopping with us!')
         setExchangeRate(t.exchangeRate?.toString() || '4100')
         setDefaultDeliveryPrice(t.defaultDeliveryPrice?.toString() || '0')
+        setLoyaltyEarnRate(t.loyaltyEarnRate?.toString() || '1')
+        setLoyaltyRedeemValue(t.loyaltyRedeemValue?.toString() || '0.01')
       }
       setLoading(false)
     })
@@ -69,9 +75,11 @@ export default function ReceiptTemplateForm() {
         bottomMessage, 
         exchangeRate: parseFloat(exchangeRate) || 4100,
         defaultDeliveryPrice: parseFloat(defaultDeliveryPrice) || 0,
+        loyaltyEarnRate: parseFloat(loyaltyEarnRate) || 1,
+        loyaltyRedeemValue: parseFloat(loyaltyRedeemValue) || 0.01,
       })
       if (res.success) setSaved(true)
-      else alert(res.error)
+      else showGlobalAlert('error', 'Error', res.error || 'Operation failed')
     })
   }
 
@@ -128,13 +136,25 @@ export default function ReceiptTemplateForm() {
                 </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Exchange Rate (1 USD = ? local)</Label>
-              <Input type="number" value={exchangeRate} onChange={e => setExchangeRate(e.target.value)} placeholder="4100" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Exchange Rate (1 USD = ? local)</Label>
+                <Input type="number" value={exchangeRate} onChange={e => setExchangeRate(e.target.value)} placeholder="4100" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Default Delivery Price ($)</Label>
+                <Input type="number" value={defaultDeliveryPrice} onChange={e => setDefaultDeliveryPrice(e.target.value)} placeholder="0" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Default Delivery Price ($)</Label>
-              <Input type="number" value={defaultDeliveryPrice} onChange={e => setDefaultDeliveryPrice(e.target.value)} placeholder="0" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
+              <div className="space-y-2">
+                <Label className="text-xs text-amber-600 font-medium">% Loyalty Earn ($1 = ? pts)</Label>
+                <Input type="number" step="0.01" value={loyaltyEarnRate} onChange={e => setLoyaltyEarnRate(e.target.value)} placeholder="1" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-amber-600 font-medium">Redeem Value (1 pt = ? $)</Label>
+                <Input type="number" step="0.01" value={loyaltyRedeemValue} onChange={e => setLoyaltyRedeemValue(e.target.value)} placeholder="0.01" />
+              </div>
             </div>
           </CardContent>
         </Card>

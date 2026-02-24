@@ -185,6 +185,8 @@ CREATE TABLE "ReceiptTemplate" (
     "bottomMessage" TEXT,
     "exchangeRate" DECIMAL(10,2) DEFAULT 4100,
     "defaultDeliveryPrice" DECIMAL(10,2) DEFAULT 0,
+    "loyaltyEarnRate" DECIMAL(10,2) DEFAULT 1,
+    "loyaltyRedeemValue" DECIMAL(10,2) DEFAULT 0.01,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

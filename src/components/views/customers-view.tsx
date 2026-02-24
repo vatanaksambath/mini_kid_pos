@@ -25,8 +25,10 @@ import { useEffect, useState, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/use-app-store'
 
 export default function CustomersView() {
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [customers, setCustomers]       = useState<any[]>([])
   const [socialTypes, setSocialTypes]   = useState<any[]>([])
   const [loading, setLoading]           = useState(true)
@@ -62,7 +64,7 @@ export default function CustomersView() {
     if (!confirm('Delete this customer?')) return
     const res = await deleteCustomer(id)
     if (res.success) loadCustomers()
-    else alert(res.error)
+    else showGlobalAlert('error', 'Error', res.error || 'Operation failed')
   }
 
   const filtered = customers.filter(c => {

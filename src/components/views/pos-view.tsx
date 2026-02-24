@@ -27,10 +27,15 @@ export default function POSView() {
 
   const [manualSku, setManualSku] = useState('')
   const [isScanning, setIsScanning] = useState(false)
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
 
   const handleAddItem = useCallback(async (sku: string) => {
     const existingItem = cart.find((item) => item.sku === sku)
     if (existingItem) {
+      if (existingItem.availableStock !== undefined && existingItem.quantity >= existingItem.availableStock) {
+        showGlobalAlert('warning', 'Stock Limit', `Cannot add more. Only ${existingItem.availableStock} in stock.`)
+        return
+      }
       updateQuantity(sku, 1)
       return
     }
@@ -38,6 +43,13 @@ export default function POSView() {
     const result = await getVariantBySKU(sku)
     if (result.success && result.data) {
       const v = result.data
+      const totalStock = v.inventory?.reduce((acc: number, inv: any) => acc + inv.quantity, 0) || 0
+      
+      if (totalStock <= 0) {
+        showGlobalAlert('warning', 'Out of Stock', `Out of stock! ${sku} has no available inventory.`)
+        return
+      }
+
       addItemToCart({
         variantId: v.id,
         sku: v.sku,
@@ -45,11 +57,12 @@ export default function POSView() {
         variantInfo: `${v.size?.name || ''} ${v.color || ''}`.trim(),
         price: Number(v.basePrice),
         quantity: 1,
+        availableStock: totalStock,
       })
     } else {
-      alert('Product not found: ' + sku)
+      showGlobalAlert('error', 'Not Found', 'Product not found: ' + sku)
     }
-  }, [cart, addItemToCart, updateQuantity])
+  }, [cart, addItemToCart, updateQuantity, showGlobalAlert])
 
   const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
@@ -127,7 +140,18 @@ export default function POSView() {
                               <Minus className="h-3 w-3" />
                             </Button>
                             <span className="w-4 sm:w-8 text-center text-sm font-bold">{item.quantity}</span>
-                            <Button variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => updateQuantity(item.sku, 1)}>
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              className="h-7 w-7 sm:h-8 sm:w-8" 
+                              onClick={() => {
+                                if (item.availableStock !== undefined && item.quantity >= item.availableStock) {
+                                  showGlobalAlert('warning', 'Stock Limit', `Cannot add more. Only ${item.availableStock} in stock.`)
+                                } else {
+                                  updateQuantity(item.sku, 1)
+                                }
+                              }}
+                            >
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>

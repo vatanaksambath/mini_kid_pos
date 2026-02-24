@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/use-app-store'
 import {
   DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -34,6 +35,7 @@ import {
 } from '@/components/ui/dialog'
 
 export default function InventoryView() {
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [products, setProducts]         = useState<any[]>([])
   const [categories, setCategories]     = useState<any[]>([])
   const [brands, setBrands]             = useState<any[]>([])
@@ -93,7 +95,7 @@ export default function InventoryView() {
     if (!confirm('Delete this product and all its variants?')) return
     const res = await deleteProduct(id)
     if (res.success) loadProducts(true)
-    else alert(res.error)
+    else showGlobalAlert('error', 'Error', res.error || 'Operation failed')
   }
 
   const filteredProducts = products.filter(p => {

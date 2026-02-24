@@ -5,6 +5,7 @@ import Nav from "@/components/layout/nav";
 import Header from "@/components/layout/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { GlobalAlertModal } from "@/components/ui/global-alert-modal";
+import { InfoModalProvider } from "@/components/ui/info-modal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({
             </div>
           </div>
           <GlobalAlertModal />
+          <InfoModalProvider />
         </ThemeProvider>
       </body>
     </html>
