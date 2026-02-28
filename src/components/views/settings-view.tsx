@@ -32,6 +32,7 @@ const TABS = [
 ]
 
 export default function SettingsView() {
+  const [activeTab, setActiveTab] = useState('categories')
   const [categories, setCategories]   = useState<any[]>([])
   const [brands, setBrands]           = useState<any[]>([])
   const [socialTypes, setSocialTypes] = useState<any[]>([])
@@ -39,24 +40,56 @@ export default function SettingsView() {
   const [colors, setColors]           = useState<any[]>([])
   const [prizes, setPrizes]           = useState<any[]>([])
   const [banks, setBanks]             = useState<any[]>([])
-  const [loading, setLoading]         = useState(true)
+  const [loading, setLoading]         = useState(false)
+  const [loadedTabs, setLoadedTabs]   = useState<Record<string, boolean>>({})
 
-  const loadAll = useCallback(async (isSilent = false) => {
+  const loadTabData = useCallback(async (tab: string, isSilent = false) => {
     if (!isSilent) setLoading(true)
-    const [catRes, brandRes, socialRes, sizeRes, colorRes, prizeRes, bankRes] = await Promise.all([
-      getCategories(), getBrands(), getSocialMediaTypes(), getSizes(), getColors(), getLoyaltyPrizes(), getBankPaymentTypes()
-    ])
-    if (catRes.success)   setCategories(catRes.data || [])
-    if (brandRes.success) setBrands(brandRes.data || [])
-    if (socialRes.success) setSocialTypes(socialRes.data || [])
-    if (sizeRes.success)  setSizes(sizeRes.data || [])
-    if (colorRes.success) setColors(colorRes.data || [])
-    if (prizeRes.success) setPrizes(prizeRes.data || [])
-    if (bankRes.success)  setBanks(bankRes.data || [])
+    try {
+      switch (tab) {
+        case 'categories':
+          const catRes = await getCategories()
+          if (catRes.success) setCategories(catRes.data || [])
+          break
+        case 'brands':
+          const brandRes = await getBrands()
+          if (brandRes.success) setBrands(brandRes.data || [])
+          break
+        case 'sizes':
+          const sizeRes = await getSizes()
+          if (sizeRes.success) setSizes(sizeRes.data || [])
+          break
+        case 'social':
+          const socialRes = await getSocialMediaTypes()
+          if (socialRes.success) setSocialTypes(socialRes.data || [])
+          break
+        case 'colors':
+          const colorRes = await getColors()
+          if (colorRes.success) setColors(colorRes.data || [])
+          break
+        case 'loyalty':
+          const prizeRes = await getLoyaltyPrizes()
+          if (prizeRes.success) setPrizes(prizeRes.data || [])
+          break
+        case 'banks':
+          const bankRes = await getBankPaymentTypes()
+          if (bankRes.success) setBanks(bankRes.data || [])
+          break
+      }
+      setLoadedTabs(prev => ({ ...prev, [tab]: true }))
+    } catch (e) {
+      console.error(`Error loading ${tab}:`, e)
+    }
     setLoading(false)
   }, [])
 
-  useEffect(() => { loadAll() }, [loadAll])
+  useEffect(() => {
+    if (!loadedTabs[activeTab]) {
+      loadTabData(activeTab)
+    }
+  }, [activeTab, loadedTabs, loadTabData])
+
+  const refreshActiveTab = () => loadTabData(activeTab)
 
   return (
     <div className="flex-1 space-y-6 p-4 lg:p-8 pt-6 animate-in fade-in duration-500">
@@ -66,7 +99,7 @@ export default function SettingsView() {
           <h2 className="text-3xl font-bold tracking-tight">Configuration</h2>
           <p className="text-muted-foreground text-sm">Manage global system parameters and master data.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => loadAll(true)} disabled={loading}>
+        <Button variant="outline" size="sm" onClick={refreshActiveTab} disabled={loading}>
           <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
           Refresh
         </Button>
@@ -74,7 +107,7 @@ export default function SettingsView() {
 
       <Card className="border shadow-sm overflow-hidden">
         <CardContent className="p-0">
-          <Tabs defaultValue="categories" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Modern tab bar */}
             <div className="border-b bg-muted/20 overflow-x-auto">
               <TabsList className="h-auto bg-transparent rounded-none flex gap-0 p-0 w-max min-w-full snap-x snap-mandatory">
@@ -97,31 +130,31 @@ export default function SettingsView() {
 
             <div className="p-6">
               <TabsContent value="categories" className="mt-0 outline-none">
-                <SettingsTable title="Category" type="category" data={categories} onCreate={createCategory} onUpdate={updateCategory} onRefresh={() => loadAll(true)} />
+                <SettingsTable title="Category" type="category" data={categories} onCreate={createCategory} onUpdate={updateCategory} onRefresh={refreshActiveTab} />
               </TabsContent>
 
               <TabsContent value="brands" className="mt-0 outline-none">
-                <SettingsTable title="Brand" type="brand" data={brands} onCreate={createBrand} onUpdate={updateBrand} onRefresh={() => loadAll(true)} />
+                <SettingsTable title="Brand" type="brand" data={brands} onCreate={createBrand} onUpdate={updateBrand} onRefresh={refreshActiveTab} />
               </TabsContent>
 
               <TabsContent value="sizes" className="mt-0 outline-none">
-                <SettingsTable title="Size" type="size" data={sizes} onCreate={createSize} onUpdate={updateSize} onRefresh={() => loadAll(true)} />
+                <SettingsTable title="Size" type="size" data={sizes} onCreate={createSize} onUpdate={updateSize} onRefresh={refreshActiveTab} />
               </TabsContent>
 
               <TabsContent value="social" className="mt-0 outline-none">
-                <SettingsTable title="Social Media Type" type="social" data={socialTypes} onCreate={createSocialMediaType} onUpdate={updateSocialMediaType} onRefresh={() => loadAll(true)} />
+                <SettingsTable title="Social Media Type" type="social" data={socialTypes} onCreate={createSocialMediaType} onUpdate={updateSocialMediaType} onRefresh={refreshActiveTab} />
               </TabsContent>
 
               <TabsContent value="colors" className="mt-0 outline-none">
-                <SettingsTable title="Color" type="color" data={colors} onCreate={createColor} onUpdate={updateColor} onRefresh={() => loadAll(true)} />
+                <SettingsTable title="Color" type="color" data={colors} onCreate={createColor} onUpdate={updateColor} onRefresh={refreshActiveTab} />
               </TabsContent>
 
               <TabsContent value="loyalty" className="mt-0 outline-none">
-                <LoyaltyPrizeTable data={prizes} onRefresh={() => loadAll(true)} />
+                <LoyaltyPrizeTable data={prizes} onRefresh={refreshActiveTab} />
               </TabsContent>
 
               <TabsContent value="banks" className="mt-0 outline-none">
-                <BankPaymentTable data={banks} onRefresh={() => loadAll(true)} />
+                <BankPaymentTable data={banks} onRefresh={refreshActiveTab} />
               </TabsContent>
 
               <TabsContent value="receipt" className="mt-0 outline-none">

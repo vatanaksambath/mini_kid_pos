@@ -256,7 +256,7 @@ export async function updateCustomer(id: string, data: any) {
   }
 }
 
-export async function getOrders() {
+export async function getOrders(limit = 100) {
   noStore();
   try {
     const { data, error } = await supabase
@@ -275,6 +275,7 @@ export async function getOrders() {
         payments:PaymentTransaction(*)
       `)
       .order('createdAt', { ascending: false })
+      .limit(limit)
     if (error) throw error
     return { success: true, data: data || [] }
   } catch (error) {

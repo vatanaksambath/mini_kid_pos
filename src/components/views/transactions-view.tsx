@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
 import { getOrders, updateOrderStatus } from '@/actions/orders'
 import { getReceiptTemplate } from '@/actions/settings'
@@ -59,7 +59,7 @@ export default function TransactionsView() {
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     const [ordersRes, tmplRes] = await Promise.all([
-      getOrders(),
+      getOrders(500), // Increased limit for history but still capped
       getReceiptTemplate()
     ])
     if (ordersRes.success) setOrders(ordersRes.data || [])
@@ -72,31 +72,39 @@ export default function TransactionsView() {
 
   useEffect(() => { 
     load()
-    const timer = setInterval(() => load(true), 30000) // Auto refresh every 30s
+    const timer = setInterval(() => load(true), 60000) // Lower frequency auto refresh (1 min)
     return () => clearInterval(timer)
   }, [load])
   useEffect(() => { setCurrentPage(1) }, [search, filterDateFrom, filterDateTo, filterPayment, filterCustomer])
 
-  const uniqueCustomers = Array.from(new Set(orders.map(o => o.customer?.name).filter(Boolean)))
+  const uniqueCustomers = useMemo(() => 
+    Array.from(new Set(orders.map(o => o.customer?.name).filter(Boolean))),
+  [orders])
+
   const hasActiveFilters = filterDateFrom || filterDateTo || filterPayment !== 'all' || filterCustomer !== 'all'
   const clearFilters = () => { setFilterDateFrom(''); setFilterDateTo(''); setFilterPayment('all'); setFilterCustomer('all') }
 
-  const filtered = orders.filter(o => {
-    const matchSearch = !search ||
-      o.orderNumber?.toLowerCase().includes(search.toLowerCase()) ||
-      o.customer?.name?.toLowerCase().includes(search.toLowerCase())
-    const orderDate = new Date(o.createdAt)
-    const matchFrom = !filterDateFrom || orderDate >= new Date(filterDateFrom)
-    const matchTo = !filterDateTo || orderDate <= new Date(filterDateTo + 'T23:59:59')
-    const matchPayment = filterPayment === 'all' || o.payments?.some((p: any) => p.paymentMethod === filterPayment)
-    const matchCustomer = filterCustomer === 'all' || o.customer?.name === filterCustomer
-    return matchSearch && matchFrom && matchTo && matchPayment && matchCustomer
-  })
+  const filtered = useMemo(() => {
+    return orders.filter((o: any) => {
+      const matchSearch = !search ||
+        o.orderNumber?.toLowerCase().includes(search.toLowerCase()) ||
+        o.customer?.name?.toLowerCase().includes(search.toLowerCase())
+      const orderDate = new Date(o.createdAt)
+      const matchFrom = !filterDateFrom || orderDate >= new Date(filterDateFrom)
+      const matchTo = !filterDateTo || orderDate <= new Date(filterDateTo + 'T23:59:59')
+      const matchPayment = filterPayment === 'all' || o.payments?.some((p: any) => p.paymentMethod === filterPayment)
+      const matchCustomer = filterCustomer === 'all' || o.customer?.name === filterCustomer
+      return matchSearch && matchFrom && matchTo && matchPayment && matchCustomer
+    })
+  }, [orders, search, filterDateFrom, filterDateTo, filterPayment, filterCustomer])
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage)
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  
+  const paginated = useMemo(() => {
+    return filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  }, [filtered, currentPage, itemsPerPage])
 
-  const exportData = () => filtered.map((o, idx) => ({
+  const exportData = useCallback(() => filtered.map((o: any, idx: number) => ({
     'No.': idx + 1,
     'Order #': o.orderNumber?.substring(0, 8).toUpperCase(),
     'Date': new Date(o.createdAt).toLocaleString(),
@@ -107,7 +115,7 @@ export default function TransactionsView() {
     'Discount ($)': Number(o.discountAmount || 0).toFixed(2),
     'Payment': o.payments?.[0]?.paymentMethod || '—',
     'Location': o.location?.name || '—',
-  }))
+  })), [filtered])
 
   const downloadXlsx = () => {
     const ws = XLSX.utils.json_to_sheet(exportData())
@@ -210,7 +218,7 @@ export default function TransactionsView() {
                   <SelectContent>
                     <SelectItem value="all">All Customers</SelectItem>
                     <SelectItem value="walk-in">Walk-in</SelectItem>
-                    {uniqueCustomers.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                    {uniqueCustomers.map((name: any) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -253,7 +261,7 @@ export default function TransactionsView() {
                     <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">No transactions found.</TableCell>
                   </TableRow>
                 ) : (
-                  paginated.map((order, idx) => (
+                  paginated.map((order: any, idx: number) => (
                     <React.Fragment key={order.id}>
                       <TableRow className="hover:bg-muted/20">
                         <TableCell className="p-2 text-center">
