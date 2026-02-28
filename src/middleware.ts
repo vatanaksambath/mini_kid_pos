@@ -15,7 +15,12 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/_next') || 
     pathname.startsWith('/api/auth') ||
     pathname === '/favicon.ico' ||
-    pathname === '/logo.png'
+    pathname === '/logo.png' ||
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js' ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.svg')
   ) {
     return NextResponse.next();
   }
@@ -40,6 +45,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icon-.*\\.png|apple-touch-icon\\.png).*)',
   ],
 };
