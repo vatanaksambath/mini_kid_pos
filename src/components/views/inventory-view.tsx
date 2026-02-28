@@ -282,7 +282,8 @@ export default function InventoryView() {
         </CardHeader>
 
         <CardContent className="p-0 overflow-auto">
-          <Table>
+          {/* Desktop Table */}
+          <Table className="hidden md:table">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 {visibleColumns.no       && <TableHead className="w-12 pl-4 text-center">No.</TableHead>}
@@ -406,6 +407,114 @@ export default function InventoryView() {
               )}
             </TableBody>
           </Table>
+
+          {/* Mobile Card Grid */}
+          <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-3 p-3">
+            {loading && products.length === 0 ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-32 rounded-xl bg-muted/20 animate-pulse border" />
+              ))
+            ) : filteredProducts.length === 0 ? (
+              <div className="col-span-1 border rounded-xl h-32 flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
+                <Package className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">No products found.</p>
+              </div>
+            ) : (
+              paginatedProducts.map((product) => {
+                const { firstImage, extraCount, allImages } = parseImages(product.imageUrl)
+                const totalStock = product.variants.reduce((acc: number, v: any) =>
+                  acc + (v.inventory?.reduce((s: number, i: any) => s + i.quantity, 0) || 0), 0)
+                const isLowStock = totalStock < 10
+
+                return (
+                  <div key={product.id} className="bg-card border rounded-xl overflow-hidden shadow-sm hover:border-primary/30 transition-colors flex flex-col">
+                    <div className="flex p-3 gap-3">
+                      {/* Image Thumbnail */}
+                      <div className="shrink-0 relative">
+                        {firstImage ? (
+                          <div className="relative">
+                            <img
+                              src={firstImage}
+                              alt={product.name}
+                              className="h-16 w-16 object-cover rounded-lg border shadow-sm cursor-pointer"
+                              onClick={() => setPreviewImages(allImages)}
+                            />
+                            {extraCount > 0 && (
+                              <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                                +{extraCount}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="h-16 w-16 bg-muted/50 rounded-lg flex items-center justify-center text-[10px] text-muted-foreground border border-dashed">No Img</div>
+                        )}
+                      </div>
+
+                      {/* Info Details */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <div className="flex items-start justify-between gap-1">
+                          <h4 className="font-bold text-[15px] truncate">{product.name}</h4>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <span className="px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 text-[9px] font-black uppercase whitespace-nowrap">
+                            {product.brand?.name || 'Generic'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground truncate">{product.category?.name || 'Uncategorized'}</span>
+                        </div>
+                        <div className="text-[10px] text-primary/80 uppercase font-black tracking-tighter bg-primary/10 inline-block px-1.5 py-0.5 rounded w-max mt-1.5">
+                          {product.variants.length} Variants
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer / Actions */}
+                    <div className="border-t bg-muted/10 p-2 flex items-center justify-between mt-auto">
+                      <div className="flex items-center gap-1.5 px-1">
+                        <div className="h-1.5 w-8 bg-muted rounded-full overflow-hidden">
+                          <div className={cn("h-full", isLowStock ? "bg-orange-500" : "bg-primary")} style={{ width: `${Math.min(100, (totalStock / 50) * 100)}%` }} />
+                        </div>
+                        <span className={cn("text-[10px] font-black uppercase text-nowrap", isLowStock ? "text-orange-500" : "text-primary")}>
+                           {totalStock} in Stock
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-end gap-0.5 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => setViewProduct(product)} title="View Product">
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <ProductModal
+                          product={product}
+                          onSuccess={() => loadProducts(true)}
+                          trigger={
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" title="Edit Product">
+                              <Edit className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          }
+                        />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="More Options">
+                               <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <div className="p-1 flex flex-col gap-1">
+                                <Button variant="ghost" size="sm" className="justify-start hover:bg-blue-500/10 hover:text-blue-500 w-full" onClick={() => setPrintProduct(product)}>
+                                  <QrCode className="mr-2 h-4 w-4 text-blue-500" /> Labels
+                                </Button>
+                                <Button variant="ghost" size="sm" className="justify-start hover:bg-red-500/10 hover:text-red-500 w-full" onClick={() => handleDelete(product.id)}>
+                                  <Trash2 className="mr-2 h-4 w-4 text-red-500" /> Delete
+                                </Button>
+                            </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
         </CardContent>
 
         {totalPages > 1 && (

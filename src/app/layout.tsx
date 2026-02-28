@@ -42,7 +42,7 @@ export default function RootLayout({
             <Nav />
             <div className="flex-1 flex flex-col min-w-0">
               <Header />
-              <main className="flex-1 overflow-y-auto">
+              <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
                 {children}
               </main>
             </div>

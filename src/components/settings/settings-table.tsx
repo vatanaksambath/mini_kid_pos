@@ -97,7 +97,8 @@ export default function SettingsTable({ title, type, data, onCreate, onUpdate, o
       </div>
 
       <div className="border rounded-md">
-        <Table>
+        {/* Desktop Table */}
+        <Table className="hidden sm:table">
           <TableHeader>
             <TableRow>
               {isColor && <TableHead className="w-16">Color</TableHead>}
@@ -138,6 +139,40 @@ export default function SettingsTable({ title, type, data, onCreate, onUpdate, o
             )}
           </TableBody>
         </Table>
+
+        {/* Mobile Card List */}
+        <div className="sm:hidden flex flex-col divide-y bg-card border-x border-b">
+          {data.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">No {type}s added yet.</div>
+          ) : (
+            data.map((item) => (
+              <div key={item.id} className="p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  {isColor && (
+                    <div className="h-8 w-8 rounded-full border shadow-sm shrink-0" style={{ backgroundColor: item.hex || '#000' }} />
+                  )}
+                  {!isColor && (
+                    <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
+                      <span className="font-semibold text-xs text-muted-foreground">ID</span>
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-medium text-sm">{item.name}</h4>
+                    {isColor && <p className="text-xs text-muted-foreground font-mono">{item.hex}</p>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleOpenEdit(item)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(item.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

@@ -100,7 +100,8 @@ export default function LoyaltyPrizeTable({ data, onRefresh }: { data: Prize[]; 
       </div>
 
       <div className="border rounded-md">
-        <Table>
+        {/* Desktop Table */}
+        <Table className="hidden sm:table">
           <TableHeader>
             <TableRow>
               <TableHead>Prize Name</TableHead>
@@ -143,6 +144,41 @@ export default function LoyaltyPrizeTable({ data, onRefresh }: { data: Prize[]; 
             )}
           </TableBody>
         </Table>
+
+        {/* Mobile Card List */}
+        <div className="sm:hidden flex flex-col divide-y bg-card border-x border-b">
+          {data.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">No prizes configured yet.</div>
+          ) : (
+            data.map((item) => (
+              <div key={item.id} className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm">{item.name}</h4>
+                    <div className="mt-1">
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-bold">
+                        {item.pointsCost.toLocaleString()} pts
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleOpenEdit(item)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(item.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 bg-muted/40 p-2 rounded-md">
+                    {item.description}
+                  </p>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

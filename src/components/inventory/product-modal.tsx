@@ -34,6 +34,7 @@ import { Plus, Trash2, Package, X, UploadCloud } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useTransition, useRef } from 'react'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 interface Variant {
   id?: string
@@ -53,10 +54,17 @@ interface ProductModalProps {
   onSuccess?: () => void
 }
 
+interface ProductImage {
+  type: 'existing' | 'new'
+  url: string // existing URL or object URL for preview
+  file?: File
+}
+
 export default function ProductModal({ product, open: externalOpen, onOpenChange, trigger, onSuccess }: ProductModalProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [internalOpen, setInternalOpen] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   
   const open = externalOpen !== undefined ? externalOpen : internalOpen
   const setOpen = onOpenChange || setInternalOpen
@@ -78,7 +86,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
   const [stockDate, setStockDate] = useState(new Date().toISOString().split('T')[0])
   const [categoryId, setCategoryId] = useState('')
   const [brandId, setBrandId] = useState('')
-  const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [images, setImages] = useState<ProductImage[]>([])
   const [previewImage, setPreviewImage] = useState<string | null>(null)
 
   // Variants State
@@ -108,7 +116,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
           parsedImages = [product.imageUrl]
         }
       }
-      setImageUrls(parsedImages)
+      setImages(parsedImages.map(url => ({ type: 'existing', url })))
 
       setVariants(product.variants.map((v: any) => ({
         id: v.id,
@@ -146,24 +154,23 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
-    const newImages: string[] = []
-    let loadedCount = 0
-
-    files.forEach((file) => {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        newImages.push(reader.result as string)
-        loadedCount++
-        if (loadedCount === files.length) {
-          setImageUrls((prev) => [...prev, ...newImages])
-        }
-      }
-      reader.readAsDataURL(file)
-    })
+    const newImageObjs: ProductImage[] = files.map(file => ({
+      type: 'new',
+      url: URL.createObjectURL(file), // create temporary preview URL
+      file
+    }))
+    
+    setImages((prev) => [...prev, ...newImageObjs])
   }
 
   const removeImage = (index: number) => {
-    setImageUrls((prev) => prev.filter((_, i) => i !== index))
+    setImages((prev) => {
+      const img = prev[index]
+      if (img.type === 'new') {
+        URL.revokeObjectURL(img.url) // Clean up memory
+      }
+      return prev.filter((_, i) => i !== index)
+    })
   }
 
   const addVariant = async () => {
@@ -205,8 +212,36 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
 
     startTransition(async () => {
       try {
+        setIsUploading(true)
+        // Upload new images to Supabase Storage
+        const finalImageUrls: string[] = []
+        for (const img of images) {
+          if (img.type === 'existing') {
+            finalImageUrls.push(img.url)
+          } else if (img.type === 'new' && img.file) {
+            const fileExt = img.file.name.split('.').pop()
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+            
+            const { error: uploadError } = await supabase.storage
+              .from('products')
+              .upload(fileName, img.file, {
+                cacheControl: '3600',
+                upsert: false
+              })
+
+            if (uploadError) {
+              console.error('Image upload failed', uploadError)
+              throw new Error(`Failed to upload ${img.file.name}: ${uploadError.message}`)
+            }
+
+            const { data } = supabase.storage.from('products').getPublicUrl(fileName)
+            finalImageUrls.push(data.publicUrl)
+          }
+        }
+        setIsUploading(false)
+
         let result
-        const payloadImageUrl = imageUrls.length > 0 ? JSON.stringify(imageUrls) : ''
+        const payloadImageUrl = finalImageUrls.length > 0 ? JSON.stringify(finalImageUrls) : ''
         const payloadStockDate = stockDate ? new Date(stockDate).toISOString() : new Date().toISOString()
 
         if (product) {
@@ -241,6 +276,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
           showGlobalAlert('error', 'Action Failed', result.error || 'Failed to save product.')
         }
       } catch (err: any) {
+        setIsUploading(false)
         showGlobalAlert('error', 'Error', err.message || 'An unexpected error occurred.')
       }
     })
@@ -252,7 +288,8 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
     setStockDate(new Date().toISOString().split('T')[0])
     setCategoryId('')
     setBrandId('')
-    setImageUrls([])
+    images.forEach(img => { if (img.type === 'new') URL.revokeObjectURL(img.url) })
+    setImages([])
     setVariants([{ sku: '', sizeId: '', color: '#000000', priceOverride: '', basePrice: '', quantity: '' }])
   }
 
@@ -267,22 +304,23 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-4xl w-[95vw] sm:w-full max-h-[95vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-4xl w-full h-[100dvh] sm:h-auto sm:max-h-[95vh] rounded-none sm:rounded-lg p-0 sm:p-6 flex flex-col overflow-hidden">
+        <DialogHeader className="p-4 sm:p-0 border-b sm:border-none shrink-0 relative pr-10">
           <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Row 1: Product Name + Stock Date */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Product Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Silk Dress" required />
+        <div className="flex-1 overflow-y-auto px-4 sm:px-0 pb-36 sm:pb-0">
+          <form onSubmit={handleSubmit} className="space-y-6 pt-4 sm:pt-0">
+            {/* Row 1: Product Name + Stock Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Product Name</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Silk Dress" required className="h-11 sm:h-9" />
+              </div>
+              <div className="space-y-2">
+                <Label>Stock Date</Label>
+                <Input type="date" value={stockDate} onChange={(e) => setStockDate(e.target.value)} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Stock Date</Label>
-              <Input type="date" value={stockDate} onChange={(e) => setStockDate(e.target.value)} />
-            </div>
-          </div>
 
           {/* Row 2: Category + Brand */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -338,17 +376,14 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                 e.preventDefault(); setIsDragging(false)
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
                 if (files.length === 0) return
-                const newImages: string[] = []
-                let loaded = 0
-                files.forEach(file => {
-                  const reader = new FileReader()
-                  reader.onloadend = () => {
-                    newImages.push(reader.result as string)
-                    loaded++
-                    if (loaded === files.length) setImageUrls(prev => [...prev, ...newImages])
-                  }
-                  reader.readAsDataURL(file)
-                })
+                
+                const newImageObjs: ProductImage[] = files.map(file => ({
+                  type: 'new',
+                  url: URL.createObjectURL(file),
+                  file
+                }))
+                
+                setImages(prev => [...prev, ...newImageObjs])
               }}
             >
               <UploadCloud className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
@@ -364,15 +399,15 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
               />
             </div>
             {/* Thumbnail previews */}
-            {imageUrls.length > 0 && (
+            {images.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
-                {imageUrls.map((url, i) => (
+                {images.map((img, i) => (
                   <div key={i} className="relative group">
                     <img
-                      src={url}
+                      src={img.url}
                       alt={`Preview ${i}`}
                       className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => setPreviewImage(url)}
+                      onClick={() => setPreviewImage(img.url)}
                     />
                     <button
                       type="button"
@@ -381,30 +416,35 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                     >
                       <X className="h-3 w-3" />
                     </button>
+                    {img.type === 'new' && (
+                      <div className="absolute bottom-1 right-1 bg-primary text-[8px] font-bold text-primary-foreground px-1 py-0.5 rounded shadow">
+                        NEW
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="border rounded-lg p-3 sm:p-4 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="border rounded-lg p-3 sm:p-4 space-y-4 mb-4 sm:mb-0 bg-muted/5 sm:bg-transparent">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <h3 className="font-semibold flex items-center text-sm sm:text-base">
                 <Package className="mr-2 h-4 w-4" /> Variants & Inventory
               </h3>
-              <Button type="button" variant="outline" size="sm" onClick={addVariant} className="w-full sm:w-auto">
+              <Button type="button" variant="outline" size="sm" onClick={addVariant} className="w-full sm:w-auto h-11 sm:h-9">
                 <Plus className="mr-2 h-4 w-4" /> Add Variant
               </Button>
             </div>
-            <div ref={variantScrollRef} className="overflow-x-auto overflow-y-auto -mx-3 sm:mx-0 max-h-64">
-              <Table className="min-w-[600px] sm:min-w-full">
+            <div ref={variantScrollRef} className="overflow-x-auto overflow-y-auto -mx-3 sm:mx-0 max-h-64 hidden md:block">
+              <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs sm:text-sm px-2">SKU</TableHead>
-                    <TableHead className="text-xs sm:text-sm px-2">Size</TableHead>
-                    <TableHead className="text-xs sm:text-sm px-2">Color</TableHead>
-                    <TableHead className="text-xs sm:text-sm px-2">Price</TableHead>
-                    <TableHead className="text-xs sm:text-sm px-2">Stock</TableHead>
+                    <TableHead className="text-sm px-2">SKU</TableHead>
+                    <TableHead className="text-sm px-2">Size</TableHead>
+                    <TableHead className="text-sm px-2">Color</TableHead>
+                    <TableHead className="text-sm px-2">Price</TableHead>
+                    <TableHead className="text-sm px-2">Stock</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -416,7 +456,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                       </TableCell>
                       <TableCell className="p-2 sm:p-4">
                         <Select value={v.sizeId} onValueChange={(val) => updateVariant(i, 'sizeId', val)}>
-                          <SelectTrigger className="h-8 w-20 sm:w-24 text-xs">
+                          <SelectTrigger className="h-8 w-24 text-xs">
                             <SelectValue placeholder="Size" />
                           </SelectTrigger>
                           <SelectContent>
@@ -431,10 +471,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                         {colors.length > 0 ? (
                           <Select value={v.color} onValueChange={(val) => updateVariant(i, 'color', val)}>
                             <SelectTrigger className="h-8 w-32 text-xs">
-                              <div className="flex items-center gap-2">
-                                {v.color && v.color !== 'none' && (
-                                  <div className="h-3.5 w-3.5 rounded-full border shrink-0" style={{ backgroundColor: v.color }} />
-                                )}
+                              <div className="flex flex-1 items-center gap-2 min-w-0 pr-1">
                                 <SelectValue placeholder="Color" />
                               </div>
                             </SelectTrigger>
@@ -473,14 +510,100 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile Stacked Variant Cards */}
+            <div className="md:hidden flex flex-col gap-4 mt-2">
+              {variants.map((v, i) => (
+                <div key={i} className="bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col">
+                  {/* Card Header */}
+                  <div className="bg-muted/30 px-3 py-2 border-b flex items-center justify-between">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Variant {i + 1}</span>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 text-red-500 hover:bg-red-500/10" 
+                      onClick={() => removeVariant(i)} 
+                      disabled={variants.length === 1}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" /> Remove
+                    </Button>
+                  </div>
+                  
+                  {/* Card Body */}
+                  <div className="p-3 grid grid-cols-2 gap-3 gap-y-4">
+                    <div className="col-span-2">
+                       <Label className="text-xs text-muted-foreground mb-1 block">SKU (Auto)</Label>
+                       <Input className="h-10 text-sm bg-muted/50 font-mono" value={v.sku} onChange={(e) => updateVariant(i, 'sku', e.target.value)} required disabled placeholder="SKU-123" />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Size</Label>
+                      <Select value={v.sizeId} onValueChange={(val) => updateVariant(i, 'sizeId', val)}>
+                        <SelectTrigger className="h-10 text-sm">
+                          <SelectValue placeholder="Size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">N/A</SelectItem>
+                          {sizes.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Color</Label>
+                      {colors.length > 0 ? (
+                          <Select value={v.color} onValueChange={(val) => updateVariant(i, 'color', val)}>
+                            <SelectTrigger className="h-10 text-sm">
+                              <SelectValue placeholder="Color" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {colors.map(c => (
+                                <SelectItem key={c.id} value={c.hex}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-3.5 w-3.5 rounded-full border" style={{ backgroundColor: c.hex }} />
+                                    {c.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="flex items-center gap-2 h-10 px-3 border rounded-md">
+                            <div className="w-5 h-5 rounded-full border shadow-sm shrink-0" style={{ backgroundColor: v.color }} />
+                            <input type="color" value={v.color} onChange={(e) => updateVariant(i, 'color', e.target.value)} className="w-full h-8 opacity-0 absolute cursor-pointer" />
+                            <span className="text-sm truncate uppercase">{v.color || 'Pick color'}</span>
+                          </div>
+                        )}
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Price ($)</Label>
+                      <Input className="h-10 text-sm" type="number" step="0.01" value={v.basePrice} onChange={(e) => updateVariant(i, 'basePrice', e.target.value)} required placeholder="0.00" />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Initial Stock</Label>
+                      <Input className="h-10 text-sm" type="number" value={v.quantity} onChange={(e) => updateVariant(i, 'quantity', e.target.value)} required min="0" placeholder="0" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-              {isPending ? 'Saving...' : (product ? 'Update Product' : 'Create Product')}
+          
+          {/* Mobile sticky footer */}
+          <div className="fixed sm:relative bottom-0 left-0 right-0 p-4 sm:p-0 bg-background/95 backdrop-blur border-t sm:border-none sm:bg-transparent z-20 flex flex-col sm:flex-row gap-2 mt-auto sm:mt-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] sm:shadow-none">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto h-11 sm:h-9">Cancel</Button>
+            <Button type="submit" disabled={isPending || isUploading} className="w-full sm:w-auto h-11 sm:h-9 font-semibold">
+              {isUploading ? 'Uploading...' : isPending ? 'Saving...' : (product ? 'Update Product' : 'Create Product')}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
+        </div>
       </DialogContent>
 
       {/* Image Preview Modal */}

@@ -207,7 +207,8 @@ export default function CustomersView() {
       <Card className="glass-card overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table className="min-w-[700px] lg:min-w-full">
+            {/* Desktop Table */}
+            <Table className="hidden md:table min-w-[700px] lg:min-w-full">
               <TableHeader className="bg-muted/30">
                 <TableRow className="hover:bg-transparent">
                   {visibleColumns.no      && <TableHead className="w-12 pl-4 sm:pl-6 text-center">No.</TableHead>}
@@ -292,6 +293,71 @@ export default function CustomersView() {
                 )}
               </TableBody>
             </Table>
+            
+            {/* Mobile Card Grid */}
+            <div className="md:hidden grid grid-cols-1 gap-3 p-3">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-32 rounded-xl bg-muted/20 animate-pulse border" />
+                ))
+              ) : filtered.length === 0 ? (
+                <div className="border rounded-xl h-32 flex items-center justify-center text-muted-foreground p-6 text-center">
+                  <p className="text-sm">No customers found.</p>
+                </div>
+              ) : (
+                paginatedCustomers.map((customer) => (
+                  <div key={customer.id} className="bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-[15px]">{customer.name}</h4>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-green-500/10 text-green-600 mt-1">
+                            {customer.loyaltyPoints} PTS
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <CustomerModal
+                          customer={customer}
+                          onSuccess={() => loadCustomers(true)}
+                          trigger={
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
+                              <Edit className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                            </Button>
+                          }
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" onClick={() => handleDelete(customer.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-2 text-sm pl-0 sm:pl-13">
+                      {(customer.email || customer.phone) && (
+                        <div className="flex flex-col gap-0.5 bg-muted/30 p-2 rounded-md border">
+                          {customer.email && <span className="text-xs font-medium truncate">{customer.email}</span>}
+                          {customer.phone && <span className="text-xs text-muted-foreground">{customer.phone}</span>}
+                        </div>
+                      )}
+                      
+                      {customer.socialMedia.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {customer.socialMedia.map((s: any) => (
+                            <span key={s.id} className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-secondary border border-border/50">
+                              <Share2 className="mr-1.5 h-3 w-3" />
+                              {s.socialMediaType.name}: {s.handle}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </CardContent>
         {totalPages > 1 && (

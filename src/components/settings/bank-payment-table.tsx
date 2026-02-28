@@ -115,12 +115,12 @@ export default function BankPaymentTable({
       </div>
 
       <div className="border rounded-md overflow-hidden">
-        <Table>
+        {/* Desktop Table */}
+        <Table className="hidden sm:table">
           <TableHeader>
             <TableRow className="bg-muted/30">
               <TableHead className="w-8">#</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Type (DB)</TableHead>
               <TableHead>Type (DB)</TableHead>
               <TableHead className="text-center">Active</TableHead>
               <TableHead className="text-center">Actions</TableHead>
@@ -129,7 +129,7 @@ export default function BankPaymentTable({
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground text-sm italic">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground text-sm italic">
                   No payment methods yet. Add Cash, Card, ABA, Wing, etc.
                 </TableCell>
               </TableRow>
@@ -137,16 +137,17 @@ export default function BankPaymentTable({
               data.map(item => (
                 <TableRow key={item.id} className={cn(!item.isActive && 'opacity-40')}>
                   <TableCell className="text-xs text-muted-foreground">{item.sortOrder}</TableCell>
-                  <TableCell className="font-medium flex items-center gap-2">
-                    {typeIcon(item.type)}
-                    {item.name}
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {typeIcon(item.type)}
+                      {item.name}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-secondary border border-border">
                       {item.type?.replace('_', ' ')}
                     </span>
                   </TableCell>
-
                   <TableCell className="text-center">
                     <Switch checked={!!item.isActive} onCheckedChange={() => handleToggleActive(item)} />
                   </TableCell>
@@ -161,6 +162,51 @@ export default function BankPaymentTable({
             )}
           </TableBody>
         </Table>
+
+        {/* Mobile Card Stack */}
+        <div className="sm:hidden flex flex-col divide-y bg-card">
+          {data.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground text-sm italic">
+              No payment methods yet.
+            </div>
+          ) : (
+            data.map(item => (
+              <div key={item.id} className={cn("p-4 flex flex-col gap-3", !item.isActive && 'opacity-50')}>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0 border shadow-sm">
+                      {typeIcon(item.type)}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm flex items-center gap-2">
+                        {item.name}
+                        {!item.isActive && <span className="text-[10px] text-muted-foreground italic">(Inactive)</span>}
+                      </h4>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-secondary border uppercase">
+                          {item.type?.replace('_', ' ')}
+                        </span>
+                        <span className="text-xs text-muted-foreground font-mono">Ord: {item.sortOrder}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => handleOpenEdit(item)}>
+                      <Edit className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" onClick={() => handleDelete(item.id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between bg-muted/30 p-2 rounded-md border mt-1">
+                  <Label className="text-xs text-muted-foreground">Enabled at Checkout</Label>
+                  <Switch checked={!!item.isActive} onCheckedChange={() => handleToggleActive(item)} />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Add / Edit modal */}

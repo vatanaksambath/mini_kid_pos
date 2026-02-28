@@ -77,19 +77,19 @@ export default function SettingsView() {
           <Tabs defaultValue="categories" className="w-full">
             {/* Modern tab bar */}
             <div className="border-b bg-muted/20 overflow-x-auto">
-              <TabsList className="h-auto bg-transparent rounded-none flex gap-0 p-0 w-max min-w-full">
+              <TabsList className="h-auto bg-transparent rounded-none flex gap-0 p-0 w-max min-w-full snap-x snap-mandatory">
                 {TABS.map(({ value, label, Icon }) => (
                   <TabsTrigger
                     key={value}
                     value={value}
                     className={cn(
-                      "relative flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors whitespace-nowrap",
+                      "relative flex items-center justify-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors whitespace-nowrap snap-center shrink-0",
                       "data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-background",
                       "hover:text-foreground hover:bg-muted/40"
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
-                    <span className="hidden sm:inline">{label}</span>
+                    <span>{label}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>
