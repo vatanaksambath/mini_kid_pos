@@ -135,7 +135,7 @@ export default function TransactionsView() {
           <p className="text-muted-foreground">Full history of all sales orders.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => load(true)} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => load()} disabled={loading}>
             <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} /> Refresh
           </Button>
           <DropdownMenu>
@@ -313,7 +313,7 @@ export default function TransactionsView() {
                                 const newStatus = order.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED'
                                 if (window.confirm(`Are you sure you want to mark this order as ${newStatus === 'COMPLETED' ? 'PAID' : 'UNPAID'}?`)) {
                                   const res = await updateOrderStatus(order.id, newStatus)
-                                  if (res.success) load(true)
+                                  if (res.success) load()
                                 }
                               }}
                               title={order.status === 'COMPLETED' ? "Status: PAID. Click to mark as UNPAID" : "Status: UNPAID. Click to mark as PAID"}

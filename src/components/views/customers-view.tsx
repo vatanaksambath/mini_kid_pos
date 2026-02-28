@@ -94,7 +94,7 @@ export default function CustomersView() {
           <p className="text-muted-foreground">Manage your relationships and loyalty programs.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => loadCustomers(true)} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => loadCustomers()} disabled={loading}>
             <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
             Refresh
           </Button>
@@ -128,7 +128,7 @@ export default function CustomersView() {
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
-          <CustomerModal onSuccess={() => loadCustomers(true)} />
+          <CustomerModal onSuccess={() => loadCustomers()} />
         </div>
       </div>
 
@@ -276,7 +276,7 @@ export default function CustomersView() {
                         <div className="flex items-center justify-center gap-1">
                           <CustomerModal
                             customer={customer}
-                            onSuccess={() => loadCustomers(true)}
+                            onSuccess={() => loadCustomers()}
                             trigger={
                               <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
                                 <Edit className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
@@ -322,7 +322,7 @@ export default function CustomersView() {
                       <div className="flex items-center gap-1 shrink-0">
                         <CustomerModal
                           customer={customer}
-                          onSuccess={() => loadCustomers(true)}
+                          onSuccess={() => loadCustomers()}
                           trigger={
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
                               <Edit className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />

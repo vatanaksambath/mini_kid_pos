@@ -94,7 +94,7 @@ export default function InventoryView() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this product and all its variants?')) return
     const res = await deleteProduct(id)
-    if (res.success) loadProducts(true)
+    if (res.success) loadProducts()
     else showGlobalAlert('error', 'Error', res.error || 'Operation failed')
   }
 
@@ -146,7 +146,7 @@ export default function InventoryView() {
           <p className="text-muted-foreground">Manage your product catalog and stock levels.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => loadProducts(true)} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => loadProducts()} disabled={loading}>
             <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
             Refresh
           </Button>
@@ -182,7 +182,7 @@ export default function InventoryView() {
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
-          <ProductModal onSuccess={() => loadProducts(true)} />
+          <ProductModal onSuccess={() => loadProducts()} />
         </div>
       </div>
 
@@ -297,9 +297,9 @@ export default function InventoryView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading && products.length === 0 ? (
+              {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}><TableCell colSpan={8} className="h-16 animate-pulse bg-muted/10" /></TableRow>
+                  <TableRow key={i}><TableCell colSpan={8} className="h-16 animate-pulse bg-muted/10 pt-4 pb-4"><div className="h-full w-full bg-muted/20 rounded"></div></TableCell></TableRow>
                 ))
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
@@ -389,7 +389,7 @@ export default function InventoryView() {
                           </Button>
                           <ProductModal
                             product={product}
-                            onSuccess={() => loadProducts(true)}
+                            onSuccess={() => loadProducts()}
                             trigger={
                               <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" title="Edit Product">
                                 <Edit className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
@@ -410,7 +410,7 @@ export default function InventoryView() {
 
           {/* Mobile Card Grid */}
           <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-3 p-3">
-            {loading && products.length === 0 ? (
+            {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="h-32 rounded-xl bg-muted/20 animate-pulse border" />
               ))
@@ -484,7 +484,7 @@ export default function InventoryView() {
                         </Button>
                         <ProductModal
                           product={product}
-                          onSuccess={() => loadProducts(true)}
+                          onSuccess={() => loadProducts()}
                           trigger={
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" title="Edit Product">
                               <Edit className="h-4 w-4 text-muted-foreground" />
