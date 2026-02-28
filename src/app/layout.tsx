@@ -22,6 +22,8 @@ export const metadata: Metadata = {
   description: "Modern Point of Sale for Clothing Retail",
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{

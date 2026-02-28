@@ -32,7 +32,8 @@ export async function login(formData: FormData) {
     const token = signToken({ 
       id: user.id, 
       email: user.email, 
-      role: user.role 
+      role: user.role,
+      name: user.name || user.email.split('@')[0]
     })
 
     await setAuthCookie(token)
@@ -47,4 +48,20 @@ export async function login(formData: FormData) {
 export async function logout() {
   const { removeAuthCookie } = await import('@/lib/auth')
   await removeAuthCookie()
+}
+
+export async function getAuthUser() {
+  const { cookies } = await import('next/headers')
+  const { verifyToken } = await import('@/lib/auth')
+  const cookieStore = await cookies()
+  const token = cookieStore.get('auth_token')?.value
+  if (!token) return null
+  const decoded = verifyToken(token) as any
+  if (!decoded) return null
+  return { 
+    id: decoded.id, 
+    email: decoded.email, 
+    role: decoded.role, 
+    name: decoded.name || (decoded.email ? decoded.email.split('@')[0] : 'User') 
+  }
 }

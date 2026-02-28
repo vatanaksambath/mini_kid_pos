@@ -1,11 +1,9 @@
 'use client'
 
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, History } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, History } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { useAppStore, ViewType } from "@/store/use-app-store"
-import { logout } from "@/actions/auth"
+import { useState, useEffect } from "react"
 
 const navItems: { name: string; view: ViewType; icon: any }[] = [
   { name: "Dashboard", view: "dashboard", icon: LayoutDashboard },
@@ -21,25 +19,30 @@ interface NavContentProps {
 }
 
 export default function NavContent({ onNavItemClick }: NavContentProps) {
-  const router = useRouter()
   const currentView = useAppStore((state) => state.currentView)
   const setCurrentView = useAppStore((state) => state.setCurrentView)
+  const [mounted, setMounted] = useState(false)
+  const [now, setNow] = useState(new Date())
+
+  useEffect(() => {
+    setMounted(true)
+    const timer = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   const handleNav = (view: ViewType) => {
     setCurrentView(view)
     if (onNavItemClick) onNavItemClick()
   }
 
-  const handleLogout = async () => {
-    await logout()
-    router.push('/login')
-    router.refresh()
-  }
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  const formattedDateTime = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
 
   return (
     <div className="flex flex-col h-full bg-sidebar/50 backdrop-blur-xl">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold tracking-tight text-primary">MiniKid POS</h1>
+      <div className="p-6 pb-6 flex items-center gap-3">
+        <img src="/logo.png" alt="Mini Kid POS" className="h-10 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300" />
+        <h1 className="text-xl font-bold tracking-tight text-primary">MiniKid POS</h1>
       </div>
       <nav className="flex-1 px-4 space-y-2">
         {navItems.map((item) => {
@@ -63,11 +66,15 @@ export default function NavContent({ onNavItemClick }: NavContentProps) {
           )
         })}
       </nav>
-      <div className="p-4 border-t border-sidebar-border/50">
-        <Button variant="ghost" className="justify-start text-muted-foreground hover:text-destructive w-full" onClick={handleLogout}>
-          <LogOut className="mr-2 h-5 w-5" />
-          Log out
-        </Button>
+      <div className="p-4 border-t border-sidebar-border/50 text-xs text-muted-foreground flex flex-col space-y-1 items-center justify-center opacity-60">
+        <div className="font-medium tracking-wide">Version 1.0.0</div>
+        {mounted ? (
+          <div className="tabular-nums font-medium">
+            {formattedDateTime}
+          </div>
+        ) : (
+          <div className="tabular-nums font-medium invisible">Placeholder</div>
+        )}
       </div>
     </div>
   )
