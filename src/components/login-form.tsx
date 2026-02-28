@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { useState, useTransition } from "react"
 import { login } from "@/actions/auth"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 
 export function LoginForm({
   className,
@@ -46,7 +45,7 @@ export function LoginForm({
           <form className="p-6 md:p-8" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col items-center text-center gap-2">
-                <Image src="/logo.png" alt="Mini Kid POS" className="h-16 w-auto mb-2 drop-shadow-sm animate-in fade-in zoom-in duration-500" />
+                <img src="/logo.png" alt="Mini Kid POS" className="h-16 w-auto mb-2 drop-shadow-sm animate-in fade-in zoom-in duration-500" />
                 <h1 className="text-2xl font-bold">Welcome back</h1>
                 <p className="text-balance text-muted-foreground">
                   Login to Mini Kid POS
@@ -89,7 +88,7 @@ export function LoginForm({
           </form>
           <div className="relative hidden bg-primary/5 md:block border-l">
             <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
-               <Image src="/logo.png" alt="Mini Kid Logo" className="w-full max-w-[280px] object-contain drop-shadow-xl mb-8 animate-in zoom-in duration-700" />
+               <img src="/logo.png" alt="Mini Kid Logo" className="w-full max-w-[280px] object-contain drop-shadow-xl mb-8 animate-in zoom-in duration-700" />
                <div className="space-y-4">
                   <h2 className="text-3xl font-bold text-primary">Mini Kid POS</h2>
                   <p className="text-lg text-muted-foreground">Modern Apparel Point of Sale & Inventory Management</p>

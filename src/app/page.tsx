@@ -14,12 +14,12 @@ export default function AppPage() {
 
   return (
     <div className="flex-1 relative">
-      <div className={cn(currentView === 'dashboard' ? "block" : "hidden")}><DashboardView /></div>
-      <div className={cn(currentView === 'pos' ? "block" : "hidden")}><POSView /></div>
-      <div className={cn(currentView === 'inventory' ? "block" : "hidden")}><InventoryView /></div>
-      <div className={cn(currentView === 'customers' ? "block" : "hidden")}><CustomersView /></div>
-      <div className={cn(currentView === 'transactions' ? "block" : "hidden")}><TransactionsView /></div>
-      <div className={cn(currentView === 'settings' ? "block" : "hidden")}><SettingsView /></div>
+      {currentView === 'dashboard' && <DashboardView />}
+      {currentView === 'pos' && <POSView />}
+      {currentView === 'inventory' && <InventoryView />}
+      {currentView === 'customers' && <CustomersView />}
+      {currentView === 'transactions' && <TransactionsView />}
+      {currentView === 'settings' && <SettingsView />}
     </div>
   )
 }
