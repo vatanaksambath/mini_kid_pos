@@ -1,3 +1,10 @@
+export function parseUTCDate(dateStr: string | null | undefined) {
+  if (!dateStr) return new Date()
+  // If the date string doesn't have a timezone indicator, assume it's UTC and append Z
+  const normalized = (dateStr.includes('Z') || dateStr.includes('+')) ? dateStr : `${dateStr.replace(' ', 'T')}Z`
+  return new Date(normalized)
+}
+
 export function buildReceiptHtml(order: any, template: any, excRate: number): string {
   const shopName = template?.shopName || 'My Shop'
   const address = template?.address || ''
@@ -19,8 +26,8 @@ export function buildReceiptHtml(order: any, template: any, excRate: number): st
   const received = order.receivedAmount || total
   const change = order.change || 0
   const changeRiel = (change * excRate).toFixed(0)
-  const date = new Date(order.createdAt || Date.now()).toLocaleString()
-  const invoiceNo = (order.orderNumber || '').substring(0, 8).toUpperCase()
+  const date = parseUTCDate(order.createdAt).toLocaleString()
+  const invoiceNo = (order.orderNumber || '').substring(0, 10).toUpperCase()
 
   const rows = (order.items || []).map((item: any, i: number) => `
     <tr>

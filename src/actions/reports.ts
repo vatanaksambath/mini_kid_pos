@@ -10,6 +10,7 @@ export async function getSalesReport(startDate?: string, endDate?: string) {
       .from('Order')
       .select(`
         id,
+        orderNumber,
         totalAmount,
         discountAmount,
         shippingFee,

@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
 import { getOrders, updateOrderStatus } from '@/actions/orders'
 import { getReceiptTemplate } from '@/actions/settings'
-import { buildReceiptHtml } from '@/lib/receipt-utils'
+import { buildReceiptHtml, parseUTCDate } from '@/lib/receipt-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -89,7 +89,7 @@ export default function TransactionsView() {
       const matchSearch = !search ||
         o.orderNumber?.toLowerCase().includes(search.toLowerCase()) ||
         o.customer?.name?.toLowerCase().includes(search.toLowerCase())
-      const orderDate = new Date(o.createdAt)
+      const orderDate = parseUTCDate(o.createdAt)
       const matchFrom = !filterDateFrom || orderDate >= new Date(filterDateFrom)
       const matchTo = !filterDateTo || orderDate <= new Date(filterDateTo + 'T23:59:59')
       const matchPayment = filterPayment === 'all' || o.payments?.some((p: any) => p.paymentMethod === filterPayment)
@@ -106,8 +106,8 @@ export default function TransactionsView() {
 
   const exportData = useCallback(() => filtered.map((o: any, idx: number) => ({
     'No.': idx + 1,
-    'Order #': o.orderNumber?.substring(0, 8).toUpperCase(),
-    'Date': new Date(o.createdAt).toLocaleString(),
+    'Order #': o.orderNumber?.substring(0, 10).toUpperCase(),
+    'Date': parseUTCDate(o.createdAt).toLocaleString(),
     'Customer': o.customer?.name || 'Walk-in',
     'Items': o.items?.map((i: any) => `${i.variant?.product?.name || i.variant?.sku} x${i.quantity}${i.description ? ` (${i.description})` : ''}`).join(', ') || '',
     'Status': o.status === 'COMPLETED' ? 'Paid' : o.status === 'PENDING' ? 'Unpaid' : o.status,
@@ -272,8 +272,8 @@ export default function TransactionsView() {
                           ) : null}
                         </TableCell>
                         {visibleColumns.no       && <TableCell className="text-center text-xs text-muted-foreground">{(currentPage - 1) * itemsPerPage + idx + 1}</TableCell>}
-                      {visibleColumns.orderNo  && <TableCell className="font-mono text-xs font-bold">{order.orderNumber?.substring(0, 8).toUpperCase()}</TableCell>}
-                      {visibleColumns.date     && <TableCell className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleString()}</TableCell>}
+                      {visibleColumns.orderNo  && <TableCell className="font-mono text-xs font-bold">{order.orderNumber?.substring(0, 10).toUpperCase()}</TableCell>}
+                      {visibleColumns.date     && <TableCell className="text-xs text-muted-foreground">{parseUTCDate(order.createdAt).toLocaleString()}</TableCell>}
                       {visibleColumns.customer && <TableCell className="font-medium">{order.customer?.name || <span className="text-muted-foreground italic text-xs">Walk-in</span>}</TableCell>}
                       {visibleColumns.items    && (
                         <TableCell className="min-w-[200px]">

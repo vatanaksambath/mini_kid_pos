@@ -54,7 +54,7 @@ export default function POSView() {
         variantId: v.id,
         sku: v.sku,
         name: v.product.name,
-        variantInfo: `${v.size?.name || ''} ${v.color || ''}`.trim(),
+        variantInfo: `${v.size?.name || ''} ${v.colorName || v.color || ''}`.trim(),
         price: Number(v.basePrice),
         costPrice: Number(v.costPrice || 0),
         quantity: 1,

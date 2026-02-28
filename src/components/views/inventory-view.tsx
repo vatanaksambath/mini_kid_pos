@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store/use-app-store'
+import { parseUTCDate } from '@/lib/receipt-utils'
 import {
   DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -162,7 +163,7 @@ export default function InventoryView() {
                 <Button variant="ghost" size="sm" className="justify-start" onClick={() => {
                   const rows = filteredProducts.flatMap(p => p.variants.map((v: any) => ({
                     'Product': p.name, 'Brand': p.brand?.name || '', 'Category': p.category?.name || '',
-                    'SKU': v.sku, 'Color': v.color, 'Size': v.size?.name || '',
+                    'SKU': v.sku, 'Color': v.colorName || v.color, 'Size': v.size?.name || '',
                     'Cost Price ($)': Number(v.costPrice || 0).toFixed(2),
                     'Selling Price ($)': Number(v.basePrice).toFixed(2),
                     'Stock': v.inventory?.reduce((a: number, i: any) => a + i.quantity, 0) || 0,
@@ -402,7 +403,7 @@ export default function InventoryView() {
                       )}
                       {visibleColumns.stockDate && (
                         <TableCell className="text-sm">
-                          {product.stockDate ? new Date(product.stockDate).toLocaleDateString() : 'N/A'}
+                          {product.stockDate ? parseUTCDate(product.stockDate).toLocaleDateString() : 'N/A'}
                         </TableCell>
                       )}
                       <TableCell className="text-center">
@@ -600,7 +601,7 @@ export default function InventoryView() {
                   <div><span className="text-muted-foreground">Category:</span> <span className="font-medium ml-1">{viewProduct.category?.name || '—'}</span></div>
                   <div><span className="text-muted-foreground">Brand:</span> <span className="font-medium ml-1">{viewProduct.brand?.name || '—'}</span></div>
                   <div><span className="text-muted-foreground">Total Stock:</span> <span className="font-medium ml-1">{totalStock}</span></div>
-                  <div><span className="text-muted-foreground">Stock Date:</span> <span className="font-medium ml-1">{viewProduct.stockDate ? new Date(viewProduct.stockDate).toLocaleDateString() : '—'}</span></div>
+                  <div><span className="text-muted-foreground">Stock Date:</span> <span className="font-medium ml-1">{viewProduct.stockDate ? parseUTCDate(viewProduct.stockDate).toLocaleDateString() : '—'}</span></div>
                 </div>
                 {viewProduct.description && <p className="text-sm text-muted-foreground border-t pt-3">{viewProduct.description}</p>}
                 {viewProduct.variants.length > 0 && (
@@ -624,7 +625,12 @@ export default function InventoryView() {
                               <td className="p-2 font-mono">{v.sku}</td>
                               <td className="p-2">{v.size?.name || '—'}</td>
                               <td className="p-2">
-                                {v.color ? <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border inline-block" style={{ backgroundColor: v.color }} />{v.color}</span> : '—'}
+                                {v.color ? (
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="h-3 w-3 rounded-full border inline-block" style={{ backgroundColor: v.color }} />
+                                    {v.colorName || v.color}
+                                  </span>
+                                ) : '—'}
                               </td>
                               <td className="p-2 text-right">${Number(v.costPrice || 0).toFixed(2)}</td>
                               <td className="p-2 text-right">${Number(v.basePrice).toFixed(2)}</td>

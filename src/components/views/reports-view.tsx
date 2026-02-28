@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { getSalesReport, getTopSellingProducts } from '@/actions/reports'
+import { parseUTCDate } from '@/lib/receipt-utils'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,8 +64,8 @@ export default function ReportsView() {
 
   const downloadReport = () => {
     const rows = salesData.map(order => ({
-      'Date': new Date(order.createdAt).toLocaleDateString(),
-      'Order #': order.id.substring(0, 8),
+      'Date': parseUTCDate(order.createdAt).toLocaleDateString(),
+      'Order #': order.orderNumber || order.id.substring(0, 8),
       'Revenue ($)': Number(order.totalAmount).toFixed(2),
       'Status': order.status,
       'Items Count': order.items?.length || 0
@@ -251,8 +252,8 @@ export default function ReportsView() {
                     
                     return (
                       <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3 font-medium">{new Date(order.createdAt).toLocaleDateString()}</td>
-                        <td className="px-4 py-3 font-mono text-xs opacity-60 uppercase">{order.id.substring(0, 8)}</td>
+                        <td className="px-4 py-3 font-medium">{parseUTCDate(order.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 font-mono text-xs opacity-60 uppercase">{order.orderNumber || order.id.substring(0, 8)}</td>
                         <td className="px-4 py-3 text-right font-bold text-blue-600">${revenue.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right text-red-500">-${cost.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right font-black text-emerald-600">${profit.toFixed(2)}</td>

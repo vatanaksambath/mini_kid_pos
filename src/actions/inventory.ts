@@ -21,6 +21,10 @@ export async function getProducts() {
 
     if (error) throw error
 
+    // Fetch all colors to map hex to name
+    const { data: colors } = await supabase.from('Color').select('*')
+    const colorMap = new Map(colors?.map(c => [c.hex.toLowerCase(), c.name]) || [])
+
     // Convert string decimals to numbers for serialization if necessary
     const serializedProducts = (products || []).map((product: any) => ({
       ...product,
@@ -29,6 +33,7 @@ export async function getProducts() {
         basePrice: Number(variant.basePrice),
         costPrice: variant.costPrice ? Number(variant.costPrice) : 0,
         priceOverride: variant.priceOverride ? Number(variant.priceOverride) : null,
+        colorName: colorMap.get(variant.color?.toLowerCase()) || variant.color
       }))
     }))
 
@@ -64,12 +69,17 @@ export async function getProductById(id: string) {
 
     if (error || !product) return { success: false, error: 'Product not found' }
 
+    // Fetch all colors to map hex to name
+    const { data: colors } = await supabase.from('Color').select('*')
+    const colorMap = new Map(colors?.map(c => [c.hex.toLowerCase(), c.name]) || [])
+
     const serializedProduct = {
       ...product,
       variants: (product.variants || []).map((variant: any) => ({
         ...variant,
         basePrice: Number(variant.basePrice),
         priceOverride: variant.priceOverride ? Number(variant.priceOverride) : null,
+        colorName: colorMap.get(variant.color?.toLowerCase()) || variant.color
       }))
     }
 

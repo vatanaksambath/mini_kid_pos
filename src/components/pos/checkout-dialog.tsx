@@ -55,6 +55,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
   const [discountType, setDiscountType]             = useState<'none' | 'flat' | 'percent'>('none')
   const [discountValue, setDiscountValue]           = useState('')
   const [receivedAmount, setReceivedAmount]         = useState('')
+  const [receivedAmountRiel, setReceivedAmountRiel]     = useState('')
   const [redeemPoints, setRedeemPoints]             = useState(false)
   const [shippingFee, setShippingFee]               = useState<string>('0')
   const [isFreeShipping, setIsFreeShipping]         = useState(false)
@@ -83,8 +84,10 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                           : 0
   const finalShipping    = isFreeShipping ? 0 : (parseFloat(shippingFee) || 0)
   const finalTotal       = Math.max(0, total - discountAmount - pointsValue + finalShipping)
-  const change           = selectedPaymentObj?.type === 'CASH' ? Math.max(0, (parseFloat(receivedAmount) || 0) - finalTotal) : 0
   const excRate          = template?.exchangeRate || 4100
+  const totalReceivedUSD = (parseFloat(receivedAmount) || 0) + ((parseFloat(receivedAmountRiel) || 0) / excRate)
+  const change           = selectedPaymentObj?.type === 'CASH' ? Math.max(0, totalReceivedUSD - finalTotal) : 0
+  const changeRiel       = change * excRate
 
   useEffect(() => {
     if (open) {
@@ -178,8 +181,9 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
           discountType,
           loyaltyPointsRedeemed,
           paymentMethod: dbPaymentMethod,
-          receivedAmount: parseFloat(receivedAmount) || finalTotal,
+          receivedAmount: totalReceivedUSD,
           change,
+          changeRiel,
           bankType: bankTypes.find((b: any) => b.id === paymentMethodId),
           shippingFee: finalShipping,
         })
@@ -198,7 +202,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
       setOpen(false)
       setCurrentView('pos')
     }
-    setDiscountType('none'); setDiscountValue(''); setReceivedAmount('')
+    setDiscountType('none'); setDiscountValue(''); setReceivedAmount(''); setReceivedAmountRiel('')
     setSelectedCustomer('walk-in'); setCustomerSearch('')
     setRedeemPoints(false); setShowQuickAdd(false)
     if (bankTypes.length) setPaymentMethodId(bankTypes[0].id)
@@ -219,7 +223,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
           <>
             <DialogHeader className="px-6 py-3 border-b bg-muted/20">
               <DialogTitle className="text-xl font-black tracking-tight text-primary flex items-center gap-2">
-                Finalize Sale
+                Mini Kid Sale
               </DialogTitle>
             </DialogHeader>
 
@@ -336,6 +340,34 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                   </div>
                 </div>
 
+                 {/* Discount — Moved to Left Column */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                    <Percent className="h-3 w-3" /> Discount
+                  </Label>
+                  <div className="flex gap-2">
+                    <div className="flex border rounded-lg overflow-hidden text-xs">
+                      {(['none', 'flat', 'percent'] as const).map(t => (
+                        <button key={t} type="button"
+                          onClick={() => { setDiscountType(t); setDiscountValue('') }}
+                          className={cn("px-4 py-3 font-bold transition-colors", discountType === t ? "bg-primary text-primary-foreground" : "hover:bg-muted/50")}
+                        >
+                          {t === 'none' ? 'None' : t === 'flat' ? '$ Off' : '% Off'}
+                        </button>
+                      ))}
+                    </div>
+                    {discountType !== 'none' && (
+                      <Input
+                        className="h-9 flex-1 text-sm"
+                        type="number" min="0"
+                        placeholder={discountType === 'flat' ? '0.00' : '0'}
+                        value={discountValue}
+                        onChange={e => setDiscountValue(e.target.value)}
+                      />
+                    )}
+                  </div>
+                </div>
+
                 {/* Delivery Settings */}
                 <div className="p-3 bg-primary/5 rounded-xl border border-primary/10 space-y-3">
                   <div className="flex items-center justify-between">
@@ -368,46 +400,19 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                     </div>
                   )}
                 </div>
+
               </div>
 
               {/* RIGHT COLUMN */}
               <div className="p-4 md:px-8 md:pb-8 md:pt-2 bg-muted/10 flex flex-col justify-between border-l">
                 <div className="space-y-6">
-                  {/* Discount */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                      <Percent className="h-3 w-3" /> Discount
-                    </Label>
-                    <div className="flex gap-2">
-                      <div className="flex border rounded-lg overflow-hidden text-xs">
-                        {(['none', 'flat', 'percent'] as const).map(t => (
-                          <button key={t} type="button"
-                            onClick={() => { setDiscountType(t); setDiscountValue('') }}
-                            className={cn("px-4 py-3 font-bold transition-colors", discountType === t ? "bg-primary text-primary-foreground" : "hover:bg-muted/50")}
-                          >
-                            {t === 'none' ? 'None' : t === 'flat' ? '$ Off' : '% Off'}
-                          </button>
-                        ))}
-                      </div>
-                      {discountType !== 'none' && (
-                        <Input
-                          className="h-9 flex-1 text-sm"
-                          type="number" min="0"
-                          placeholder={discountType === 'flat' ? '0.00' : '0'}
-                          value={discountValue}
-                          onChange={e => setDiscountValue(e.target.value)}
-                        />
-                      )}
-                    </div>
-                  </div>
-
                   {/* Payment Method — from Settings */}
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Payment Method</Label>
                     {bankTypes.length === 0 ? (
                       <p className="text-xs text-muted-foreground italic">No payment methods configured. Add them in Settings → Payment Methods.</p>
                     ) : (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2 pb-2">
                         {bankTypes.map((method: any) => (
                           <button
                             key={method.id} type="button"
@@ -429,21 +434,41 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                     )}
                     {/* Cash change calculator — shown when selected method is CASH type */}
                     {selectedPaymentObj?.type === 'CASH' && isPaid && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="relative flex-1">
-                          <Input 
-                            className="h-12 text-sm font-bold pl-3 border-2 focus-visible:ring-primary shadow-sm" 
-                            type="number" 
-                            step="0.01" 
-                            placeholder="Amount received $" 
-                            value={receivedAmount} 
-                            onChange={e => setReceivedAmount(e.target.value)} 
-                          />
+                      <div className="space-y-3 mt-2">
+                        <div className="grid grid-cols-1 gap-4">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">$</span>
+                            <Input 
+                              className="h-12 text-sm font-bold pl-7 border-2 focus-visible:ring-primary shadow-sm" 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="0.00" 
+                              value={receivedAmount} 
+                              onChange={e => setReceivedAmount(e.target.value)} 
+                            />
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground absolute -top-2 left-2 bg-background px-1 z-10">Received USD</Label>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">៛</span>
+                            <Input 
+                              className="h-12 text-sm font-bold pl-7 border-2 focus-visible:ring-primary shadow-sm" 
+                              type="number" 
+                              step="100" 
+                              placeholder="0" 
+                              value={receivedAmountRiel} 
+                              onChange={e => setReceivedAmountRiel(e.target.value)} 
+                            />
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground absolute -top-2 left-2 bg-background px-1 z-10">Received Riel</Label>
+                          </div>
                         </div>
+
                         {change > 0 && (
-                          <div className="flex flex-col items-center justify-center bg-emerald-500 text-white px-5 py-2 rounded-xl border border-emerald-400 shadow-md transform hover:scale-105 transition-all duration-200 animate-in zoom-in-95">
-                            <span className="text-[10px] uppercase font-black tracking-tight opacity-90 mb-0.5">Total Change</span>
-                            <span className="text-lg font-black leading-none">${change.toFixed(2)}</span>
+                          <div className="flex flex-col items-center justify-center bg-emerald-500 text-white px-1 py-1 rounded-xl border border-emerald-400 shadow-md transform hover:scale-105 transition-all duration-200 animate-in zoom-in-95">
+                            <span className="text-[10px] uppercase font-black tracking-tight opacity-90 mb-1">Total Change</span>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-xl font-black">${change.toFixed(2)}</span>
+                              <span className="text-xl font-bold opacity-90">/ ៛{Math.round(changeRiel).toLocaleString()}</span>
+                            </div>
                           </div>
                         )}
                       </div>

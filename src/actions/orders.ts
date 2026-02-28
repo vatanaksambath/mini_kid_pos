@@ -45,7 +45,7 @@ export async function createOrder(data: {
     // 0. Generate sequential order number
     const { count } = await supabase.from('Order').select('*', { count: 'exact', head: true })
     const nextNum = (count || 0) + 1
-    const orderNumber = `ORD-${String(nextNum).padStart(4, '0')}`
+    const orderNumber = `ORD-${String(nextNum).padStart(6, '0')}`
 
     // 1. Create the Order
     const { data: newOrder, error: orderError } = await supabase
