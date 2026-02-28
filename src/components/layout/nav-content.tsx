@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, History } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, History, BarChart3 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAppStore, ViewType } from "@/store/use-app-store"
 import { useState, useEffect } from "react"
@@ -11,6 +11,7 @@ const navItems: { name: string; view: ViewType; icon: any }[] = [
   { name: "Inventory", view: "inventory", icon: Package },
   { name: "Customers", view: "customers", icon: Users },
   { name: "Transactions", view: "transactions", icon: History },
+  { name: "Reports", view: "reports", icon: BarChart3 },
   { name: "Settings", view: "settings", icon: Settings },
 ]
 

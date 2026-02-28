@@ -56,6 +56,7 @@ export default function POSView() {
         name: v.product.name,
         variantInfo: `${v.size?.name || ''} ${v.color || ''}`.trim(),
         price: Number(v.basePrice),
+        costPrice: Number(v.costPrice || 0),
         quantity: 1,
         availableStock: totalStock,
       })
@@ -273,7 +274,7 @@ export default function POSView() {
                 </div>
                 <CheckoutDialog 
                   total={total} 
-                  items={cart.map(i => ({ variantId: i.variantId, quantity: i.quantity, price: i.price }))}
+                  items={cart.map(i => ({ variantId: i.variantId, quantity: i.quantity, price: i.price, costPrice: i.costPrice }))}
                   onSuccess={() => clearCart()}
                 />
               </CardContent>

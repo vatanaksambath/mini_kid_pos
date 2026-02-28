@@ -43,6 +43,7 @@ interface Variant {
   color: string
   priceOverride: string
   basePrice: string
+  costPrice: string
   quantity: string
 }
 
@@ -91,7 +92,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
 
   // Variants State
   const [variants, setVariants] = useState<Variant[]>([
-    { sku: '', sizeId: '', color: '#000000', priceOverride: '', basePrice: '', quantity: '' },
+    { sku: '', sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' },
   ])
 
   useEffect(() => {
@@ -125,13 +126,14 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
         color: v.color || '#000000',
         priceOverride: v.priceOverride?.toString() || '',
         basePrice: v.basePrice?.toString() || '',
+        costPrice: v.costPrice?.toString() || '',
         quantity: v.inventory?.reduce((acc: number, curr: any) => acc + curr.quantity, 0).toString() || '0',
       })))
     } else if (open) {
       resetForm()
       generateUniqueSku().then(res => {
         if (res.success && res.sku) {
-          setVariants([{ sku: res.sku, sizeId: '', color: '#000000', priceOverride: '', basePrice: '', quantity: '' }])
+          setVariants([{ sku: res.sku, sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
         }
       })
     }
@@ -176,7 +178,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
   const addVariant = async () => {
     const res = await generateUniqueSku()
     const newSku = res.success && res.sku ? res.sku : `SKU-${Math.floor(100000 + Math.random() * 900000)}`
-    setVariants([...variants, { sku: newSku, sizeId: '', color: '#000000', priceOverride: '', basePrice: '', quantity: '' }])
+    setVariants([...variants, { sku: newSku, sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
   }
 
   // Auto-scroll variant table to bottom when a new row is added
@@ -207,6 +209,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
       color: v.color,
       priceOverride: v.priceOverride ? parseFloat(v.priceOverride) : undefined,
       basePrice: parseFloat(v.basePrice) || 0,
+      costPrice: parseFloat(v.costPrice) || 0,
       quantity: parseInt(v.quantity) || 0,
     }))
 
@@ -290,7 +293,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
     setBrandId('')
     images.forEach(img => { if (img.type === 'new') URL.revokeObjectURL(img.url) })
     setImages([])
-    setVariants([{ sku: '', sizeId: '', color: '#000000', priceOverride: '', basePrice: '', quantity: '' }])
+    setVariants([{ sku: '', sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
   }
 
   return (
@@ -443,7 +446,8 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                     <TableHead className="text-sm px-2">SKU</TableHead>
                     <TableHead className="text-sm px-2">Size</TableHead>
                     <TableHead className="text-sm px-2">Color</TableHead>
-                    <TableHead className="text-sm px-2">Price</TableHead>
+                    <TableHead className="text-sm px-2">Cost Price</TableHead>
+                    <TableHead className="text-sm px-2">Selling Price</TableHead>
                     <TableHead className="text-sm px-2">Stock</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -493,6 +497,9 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                             <input type="color" value={v.color} onChange={(e) => updateVariant(i, 'color', e.target.value)} className="w-8 h-8 p-0 border-0 bg-transparent cursor-pointer rounded-full overflow-hidden shrink-0" />
                           </div>
                         )}
+                      </TableCell>
+                      <TableCell className="p-2 sm:p-4">
+                        <Input className="h-8 w-24 text-xs" type="number" step="0.01" value={v.costPrice} onChange={(e) => updateVariant(i, 'costPrice', e.target.value)} required placeholder="0.00" />
                       </TableCell>
                       <TableCell className="p-2 sm:p-4">
                         <Input className="h-8 w-24 text-xs" type="number" step="0.01" value={v.basePrice} onChange={(e) => updateVariant(i, 'basePrice', e.target.value)} required placeholder="0.00" />
@@ -581,7 +588,12 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                     </div>
 
                     <div>
-                      <Label className="text-xs text-muted-foreground mb-1 block">Price ($)</Label>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Cost Price ($)</Label>
+                      <Input className="h-10 text-sm" type="number" step="0.01" value={v.costPrice} onChange={(e) => updateVariant(i, 'costPrice', e.target.value)} required placeholder="0.00" />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Selling Price ($)</Label>
                       <Input className="h-10 text-sm" type="number" step="0.01" value={v.basePrice} onChange={(e) => updateVariant(i, 'basePrice', e.target.value)} required placeholder="0.00" />
                     </div>
 

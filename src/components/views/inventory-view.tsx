@@ -60,6 +60,7 @@ export default function InventoryView() {
 
   const [visibleColumns, setVisibleColumns] = useState({
     no: true, image: true, info: true, brand: true, category: true, stock: true, stockDate: true,
+    costPrice: false, sellingPrice: true
   })
 
   // Keyboard nav for image slider
@@ -162,7 +163,8 @@ export default function InventoryView() {
                   const rows = filteredProducts.flatMap(p => p.variants.map((v: any) => ({
                     'Product': p.name, 'Brand': p.brand?.name || '', 'Category': p.category?.name || '',
                     'SKU': v.sku, 'Color': v.color, 'Size': v.size?.name || '',
-                    'Price ($)': Number(v.basePrice).toFixed(2),
+                    'Cost Price ($)': Number(v.costPrice || 0).toFixed(2),
+                    'Selling Price ($)': Number(v.basePrice).toFixed(2),
                     'Stock': v.inventory?.reduce((a: number, i: any) => a + i.quantity, 0) || 0,
                     'Stock Date': p.stockDate || '',
                   })))
@@ -172,7 +174,9 @@ export default function InventoryView() {
                 <Button variant="ghost" size="sm" className="justify-start" onClick={() => {
                   const rows = filteredProducts.flatMap(p => p.variants.map((v: any) => ({
                     'Product': p.name, 'Brand': p.brand?.name || '', 'Category': p.category?.name || '',
-                    'SKU': v.sku, 'Price ($)': Number(v.basePrice).toFixed(2),
+                    'SKU': v.sku, 
+                    'Cost Price ($)': Number(v.costPrice || 0).toFixed(2),
+                    'Selling Price ($)': Number(v.basePrice).toFixed(2),
                     'Stock': v.inventory?.reduce((a: number, i: any) => a + i.quantity, 0) || 0,
                   })))
                   const ws = XLSX.utils.json_to_sheet(rows); const csv = XLSX.utils.sheet_to_csv(ws)
@@ -224,6 +228,8 @@ export default function InventoryView() {
                   <DropdownMenuCheckboxItem checked={visibleColumns.info}     onCheckedChange={(v) => setVisibleColumns(p => ({ ...p, info: v }))}>Product Info</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={visibleColumns.brand}    onCheckedChange={(v) => setVisibleColumns(p => ({ ...p, brand: v }))}>Brand</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={visibleColumns.category} onCheckedChange={(v) => setVisibleColumns(p => ({ ...p, category: v }))}>Category</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.costPrice} onCheckedChange={(v) => setVisibleColumns(p => ({ ...p, costPrice: v }))}>Cost Price</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={visibleColumns.sellingPrice} onCheckedChange={(v) => setVisibleColumns(p => ({ ...p, sellingPrice: v }))}>Selling Price</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={visibleColumns.stock}    onCheckedChange={(v) => setVisibleColumns(p => ({ ...p, stock: v }))}>Stock</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={visibleColumns.stockDate}onCheckedChange={(v) => setVisibleColumns(p => ({ ...p, stockDate: v }))}>Stock Date</DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
@@ -291,6 +297,8 @@ export default function InventoryView() {
                 {visibleColumns.info     && <TableHead>Product Info</TableHead>}
                 {visibleColumns.brand    && <TableHead>Brand</TableHead>}
                 {visibleColumns.category && <TableHead>Category</TableHead>}
+                {visibleColumns.costPrice && <TableHead className="text-right">Cost Price</TableHead>}
+                {visibleColumns.sellingPrice && <TableHead className="text-right">Selling Price</TableHead>}
                 {visibleColumns.stock    && <TableHead>Stock</TableHead>}
                 {visibleColumns.stockDate && <TableHead>Stock Date</TableHead>}
                 <TableHead className="text-center">Actions</TableHead>
@@ -362,6 +370,24 @@ export default function InventoryView() {
                         </TableCell>
                       )}
                       {visibleColumns.category && <TableCell className="text-sm">{product.category?.name || '-'}</TableCell>}
+                      {visibleColumns.costPrice && (
+                        <TableCell className="text-right text-xs">
+                          {product.variants.length > 1 ? (
+                            <span className="text-muted-foreground">Multiple</span>
+                          ) : (
+                            <span className="font-medium">${Number(product.variants[0]?.costPrice || 0).toFixed(2)}</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {visibleColumns.sellingPrice && (
+                        <TableCell className="text-right text-xs">
+                          {product.variants.length > 1 ? (
+                            <span className="text-muted-foreground">Multiple</span>
+                          ) : (
+                            <span className="font-medium text-primary">${Number(product.variants[0]?.basePrice || 0).toFixed(2)}</span>
+                          )}
+                        </TableCell>
+                      )}
                       {visibleColumns.stock && (
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -585,7 +611,8 @@ export default function InventoryView() {
                           <th className="text-left p-2 font-semibold">SKU</th>
                           <th className="text-left p-2 font-semibold">Size</th>
                           <th className="text-left p-2 font-semibold">Color</th>
-                          <th className="text-right p-2 font-semibold">Price</th>
+                          <th className="text-right p-2 font-semibold">Cost</th>
+                          <th className="text-right p-2 font-semibold">Selling</th>
                           <th className="text-right p-2 font-semibold">Stock</th>
                         </tr>
                       </thead>
@@ -599,6 +626,7 @@ export default function InventoryView() {
                               <td className="p-2">
                                 {v.color ? <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border inline-block" style={{ backgroundColor: v.color }} />{v.color}</span> : '—'}
                               </td>
+                              <td className="p-2 text-right">${Number(v.costPrice || 0).toFixed(2)}</td>
                               <td className="p-2 text-right">${Number(v.basePrice).toFixed(2)}</td>
                               <td className="p-2 text-right">{qty}</td>
                             </tr>

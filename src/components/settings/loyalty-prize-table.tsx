@@ -31,7 +31,7 @@ interface Prize {
   description?: string
 }
 
-export default function LoyaltyPrizeTable({ data, onRefresh }: { data: Prize[]; onRefresh: () => void }) {
+export default function LoyaltyPrizeTable({ data, onRefresh, loading }: { data: Prize[]; onRefresh: () => void; loading?: boolean }) {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [modalOpen, setModalOpen] = useState(false)
@@ -111,7 +111,16 @@ export default function LoyaltyPrizeTable({ data, onRefresh }: { data: Prize[]; 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><div className="h-4 w-32 bg-muted animate-pulse rounded" /></TableCell>
+                  <TableCell><div className="h-5 w-20 bg-muted animate-pulse rounded-full" /></TableCell>
+                  <TableCell><div className="h-4 w-48 bg-muted animate-pulse rounded" /></TableCell>
+                  <TableCell><div className="h-8 w-20 bg-muted animate-pulse rounded mx-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                   No prizes configured yet.
@@ -147,7 +156,20 @@ export default function LoyaltyPrizeTable({ data, onRefresh }: { data: Prize[]; 
 
         {/* Mobile Card List */}
         <div className="sm:hidden flex flex-col divide-y bg-card border-x border-b">
-          {data.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                    <div className="h-4 w-12 bg-muted animate-pulse rounded-full" />
+                  </div>
+                  <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+                </div>
+                <div className="h-10 w-full bg-muted animate-pulse rounded-md" />
+              </div>
+            ))
+          ) : data.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">No prizes configured yet.</div>
           ) : (
             data.map((item) => (

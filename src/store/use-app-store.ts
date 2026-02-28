@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ViewType = 'dashboard' | 'pos' | 'inventory' | 'customers' | 'transactions' | 'settings'
+export type ViewType = 'dashboard' | 'pos' | 'inventory' | 'customers' | 'transactions' | 'settings' | 'reports'
 
 interface CartItem {
   variantId: string
@@ -8,6 +8,7 @@ interface CartItem {
   name: string
   variantInfo: string
   price: number
+  costPrice: number
   quantity: number
   availableStock?: number
 }

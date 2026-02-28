@@ -16,6 +16,7 @@ export async function createOrder(data: {
     variantId: string
     quantity: number
     price: number
+    costPrice: number
     description?: string
   }[]
   payments: {
@@ -74,6 +75,7 @@ export async function createOrder(data: {
         variantId: item.variantId,
         quantity: item.quantity,
         price: item.price,
+        costPrice: item.costPrice,
         description: item.description || null,
         status: 'SOLD',
       }))

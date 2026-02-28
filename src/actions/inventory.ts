@@ -27,6 +27,7 @@ export async function getProducts() {
       variants: (product.variants || []).map((variant: any) => ({
         ...variant,
         basePrice: Number(variant.basePrice),
+        costPrice: variant.costPrice ? Number(variant.costPrice) : 0,
         priceOverride: variant.priceOverride ? Number(variant.priceOverride) : null,
       }))
     }))
@@ -92,6 +93,7 @@ export async function createProduct(data: {
     color?: string
     priceOverride?: number
     basePrice: number
+    costPrice: number
     quantity: number
   }[]
 }) {
@@ -145,6 +147,7 @@ export async function createProduct(data: {
           color: variant.color || null,
           priceOverride: variant.priceOverride || null,
           basePrice: variant.basePrice,
+          costPrice: variant.costPrice || 0,
         })
         .select()
         .single()
@@ -208,6 +211,7 @@ export async function updateProduct(id: string, data: {
     color?: string
     priceOverride?: number
     basePrice: number
+    costPrice: number
     quantity: number
   }[]
 }) {
@@ -272,6 +276,7 @@ export async function updateProduct(id: string, data: {
             color: v.color || null,
             priceOverride: v.priceOverride || null,
             basePrice: v.basePrice,
+            costPrice: v.costPrice || 0,
           })
           .eq('id', v.id)
 
@@ -309,6 +314,7 @@ export async function updateProduct(id: string, data: {
             color: v.color || null,
             priceOverride: v.priceOverride || null,
             basePrice: v.basePrice,
+            costPrice: v.costPrice || 0,
           })
           .select()
           .single()

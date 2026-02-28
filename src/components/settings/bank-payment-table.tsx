@@ -44,8 +44,8 @@ const typeIcon = (type: DBPaymentType) => {
 }
 
 export default function BankPaymentTable({
-  data, onRefresh,
-}: { data: PaymentMethod[]; onRefresh: () => void }) {
+  data, onRefresh, loading
+}: { data: PaymentMethod[]; onRefresh: () => void; loading?: boolean }) {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [modalOpen, setModalOpen] = useState(false)
@@ -127,7 +127,22 @@ export default function BankPaymentTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><div className="h-3 w-4 bg-muted animate-pulse rounded" /></TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+                      <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                    </div>
+                  </TableCell>
+                  <TableCell><div className="h-4 w-20 bg-muted animate-pulse rounded" /></TableCell>
+                  <TableCell><div className="h-4 w-10 bg-muted animate-pulse rounded mx-auto" /></TableCell>
+                  <TableCell><div className="h-8 w-20 bg-muted animate-pulse rounded mx-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-muted-foreground text-sm italic">
                   No payment methods yet. Add Cash, Card, ABA, Wing, etc.
@@ -165,7 +180,23 @@ export default function BankPaymentTable({
 
         {/* Mobile Card Stack */}
         <div className="sm:hidden flex flex-col divide-y bg-card">
-          {data.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted animate-pulse shrink-0" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                      <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+                    </div>
+                  </div>
+                  <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+                </div>
+                <div className="h-10 w-full bg-muted animate-pulse rounded-md" />
+              </div>
+            ))
+          ) : data.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground text-sm italic">
               No payment methods yet.
             </div>

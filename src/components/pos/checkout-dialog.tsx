@@ -24,7 +24,7 @@ import { useState, useEffect, useTransition, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store/use-app-store'
 
-interface CartItem { variantId: string; quantity: number; price: number; name?: string; sku?: string; description?: string }
+interface CartItem { variantId: string; quantity: number; price: number; costPrice: number; name?: string; sku?: string; description?: string }
 
 interface CheckoutDialogProps {
   total: number
@@ -157,7 +157,13 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
         discountAmount,
         discountType,
         loyaltyPointsRedeemed,
-        items: editableItems,
+        items: editableItems.map(i => ({
+          variantId: i.variantId,
+          quantity: i.quantity,
+          price: i.price,
+          costPrice: i.costPrice,
+          description: i.description
+        })),
         payments: isPaid ? [{ amount: finalTotal, paymentMethod: dbPaymentMethod }] : [],
         shippingFee: finalShipping,
         status: isPaid ? 'COMPLETED' : 'PENDING',
@@ -208,24 +214,26 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
           CHECKOUT
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-7xl max-h-[92vh] overflow-y-auto w-[98vw]">
+      <DialogContent className="sm:max-w-[1000px] max-h-[95vh] overflow-y-auto w-[98vw] p-0 border-none shadow-2xl">
         {step === 'details' ? (
           <>
-            <DialogHeader className="pb-4 border-b">
-              <DialogTitle className="text-xl font-bold">Finalize Sale</DialogTitle>
+            <DialogHeader className="px-6 py-3 border-b bg-muted/20">
+              <DialogTitle className="text-xl font-black tracking-tight text-primary flex items-center gap-2">
+                Finalize Sale
+              </DialogTitle>
             </DialogHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative py-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
               {/* Vertical Divider */}
               <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-border -translate-x-1/2" />
               
               {/* LEFT COLUMN */}
-              <div className="space-y-6">
+              <div className="p-4 md:px-8 md:pb-8 md:pt-2 space-y-4 md:space-y-6">
                 {/* Location */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Store Location</Label>
                   <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger className="h-12 text-base">
                       <SelectValue placeholder="Select Location" />
                     </SelectTrigger>
                     <SelectContent>
@@ -240,9 +248,9 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                     <User className="h-3 w-3" /> Customer
                   </Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      className="h-9 pl-8 text-sm"
+                      className="h-12 pl-10 text-base"
                       placeholder="Search customer or Walk-in..."
                       value={customerSearch}
                       onChange={e => { setCustomerSearch(e.target.value); setShowCustomerList(true); setSelectedCustomer('walk-in') }}
@@ -303,7 +311,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                     <span>Cart Items (Edit Descriptions)</span>
                     <span className="text-[10px] lowercase font-normal italic">Optional note for receipt</span>
                   </Label>
-                  <div className="space-y-2 border rounded-lg p-2 bg-muted/20 max-h-40 overflow-y-auto shadow-inner">
+                  <div className="space-y-3 border rounded-xl p-4 bg-muted/30 max-h-60 overflow-y-auto shadow-inner">
                     {editableItems.map((item, idx) => (
                       <div key={idx} className="flex flex-col gap-1 pb-2 border-b last:border-0 mb-2 last:mb-0">
                         <div className="flex justify-between text-xs font-medium">
@@ -314,7 +322,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                           <Edit3 className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                           <Input 
                             placeholder="Add description/note..." 
-                            className="h-7 text-[10px] pl-6" 
+                            className="h-9 text-xs pl-8" 
                             value={item.description || ''}
                             onChange={e => {
                               const newItems = [...editableItems]
@@ -363,7 +371,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
               </div>
 
               {/* RIGHT COLUMN */}
-              <div className="space-y-6 flex flex-col justify-between">
+              <div className="p-4 md:px-8 md:pb-8 md:pt-2 bg-muted/10 flex flex-col justify-between border-l">
                 <div className="space-y-6">
                   {/* Discount */}
                   <div className="space-y-1.5">
@@ -375,7 +383,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                         {(['none', 'flat', 'percent'] as const).map(t => (
                           <button key={t} type="button"
                             onClick={() => { setDiscountType(t); setDiscountValue('') }}
-                            className={cn("px-3 py-2 font-medium transition-colors", discountType === t ? "bg-primary text-primary-foreground" : "hover:bg-muted/50")}
+                            className={cn("px-4 py-3 font-bold transition-colors", discountType === t ? "bg-primary text-primary-foreground" : "hover:bg-muted/50")}
                           >
                             {t === 'none' ? 'None' : t === 'flat' ? '$ Off' : '% Off'}
                           </button>
@@ -422,9 +430,22 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                     {/* Cash change calculator — shown when selected method is CASH type */}
                     {selectedPaymentObj?.type === 'CASH' && isPaid && (
                       <div className="flex items-center gap-2 mt-2">
-                        <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <Input className="h-8 text-sm" type="number" step="0.01" placeholder="Amount received" value={receivedAmount} onChange={e => setReceivedAmount(e.target.value)} />
-                        {change > 0 && <span className="text-xs font-semibold text-green-600 whitespace-nowrap">Change: ${change.toFixed(2)}</span>}
+                        <div className="relative flex-1">
+                          <Input 
+                            className="h-12 text-sm font-bold pl-3 border-2 focus-visible:ring-primary shadow-sm" 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Amount received $" 
+                            value={receivedAmount} 
+                            onChange={e => setReceivedAmount(e.target.value)} 
+                          />
+                        </div>
+                        {change > 0 && (
+                          <div className="flex flex-col items-center justify-center bg-emerald-500 text-white px-5 py-2 rounded-xl border border-emerald-400 shadow-md transform hover:scale-105 transition-all duration-200 animate-in zoom-in-95">
+                            <span className="text-[10px] uppercase font-black tracking-tight opacity-90 mb-0.5">Total Change</span>
+                            <span className="text-lg font-black leading-none">${change.toFixed(2)}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                     

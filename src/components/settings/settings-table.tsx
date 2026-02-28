@@ -30,9 +30,10 @@ interface SettingsTableProps {
   onCreate: (name: string, hex?: string) => Promise<any>
   onUpdate: (id: string, name: string, hex?: string) => Promise<any>
   onRefresh: () => void
+  loading?: boolean
 }
 
-export default function SettingsTable({ title, type, data, onCreate, onUpdate, onRefresh }: SettingsTableProps) {
+export default function SettingsTable({ title, type, data, onCreate, onUpdate, onRefresh, loading }: SettingsTableProps) {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [modalOpen, setModalOpen] = useState(false)
@@ -108,7 +109,16 @@ export default function SettingsTable({ title, type, data, onCreate, onUpdate, o
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  {isColor && <TableCell><div className="h-7 w-7 rounded-full bg-muted animate-pulse" /></TableCell>}
+                  <TableCell><div className="h-4 w-32 bg-muted animate-pulse rounded" /></TableCell>
+                  {isColor && <TableCell><div className="h-3 w-16 bg-muted animate-pulse rounded" /></TableCell>}
+                  <TableCell><div className="h-8 w-20 bg-muted animate-pulse rounded mx-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={isColor ? 4 : 2} className="h-24 text-center text-muted-foreground">
                   No records found.
@@ -142,7 +152,20 @@ export default function SettingsTable({ title, type, data, onCreate, onUpdate, o
 
         {/* Mobile Card List */}
         <div className="sm:hidden flex flex-col divide-y bg-card border-x border-b">
-          {data.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded bg-muted animate-pulse shrink-0" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                    {isColor && <div className="h-3 w-12 bg-muted animate-pulse rounded" />}
+                  </div>
+                </div>
+                <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+              </div>
+            ))
+          ) : data.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">No {type}s added yet.</div>
           ) : (
             data.map((item) => (

@@ -130,31 +130,31 @@ export default function SettingsView() {
 
             <div className="p-6">
               <TabsContent value="categories" className="mt-0 outline-none">
-                <SettingsTable title="Category" type="category" data={categories} onCreate={createCategory} onUpdate={updateCategory} onRefresh={refreshActiveTab} />
+                <SettingsTable title="Category" type="category" data={categories} onCreate={createCategory} onUpdate={updateCategory} onRefresh={refreshActiveTab} loading={loading} />
               </TabsContent>
-
+ 
               <TabsContent value="brands" className="mt-0 outline-none">
-                <SettingsTable title="Brand" type="brand" data={brands} onCreate={createBrand} onUpdate={updateBrand} onRefresh={refreshActiveTab} />
+                <SettingsTable title="Brand" type="brand" data={brands} onCreate={createBrand} onUpdate={updateBrand} onRefresh={refreshActiveTab} loading={loading} />
               </TabsContent>
-
+ 
               <TabsContent value="sizes" className="mt-0 outline-none">
-                <SettingsTable title="Size" type="size" data={sizes} onCreate={createSize} onUpdate={updateSize} onRefresh={refreshActiveTab} />
+                <SettingsTable title="Size" type="size" data={sizes} onCreate={createSize} onUpdate={updateSize} onRefresh={refreshActiveTab} loading={loading} />
               </TabsContent>
-
+ 
               <TabsContent value="social" className="mt-0 outline-none">
-                <SettingsTable title="Social Media Type" type="social" data={socialTypes} onCreate={createSocialMediaType} onUpdate={updateSocialMediaType} onRefresh={refreshActiveTab} />
+                <SettingsTable title="Social Media Type" type="social" data={socialTypes} onCreate={createSocialMediaType} onUpdate={updateSocialMediaType} onRefresh={refreshActiveTab} loading={loading} />
               </TabsContent>
-
+ 
               <TabsContent value="colors" className="mt-0 outline-none">
-                <SettingsTable title="Color" type="color" data={colors} onCreate={createColor} onUpdate={updateColor} onRefresh={refreshActiveTab} />
+                <SettingsTable title="Color" type="color" data={colors} onCreate={createColor} onUpdate={updateColor} onRefresh={refreshActiveTab} loading={loading} />
               </TabsContent>
-
+ 
               <TabsContent value="loyalty" className="mt-0 outline-none">
-                <LoyaltyPrizeTable data={prizes} onRefresh={refreshActiveTab} />
+                <LoyaltyPrizeTable data={prizes} onRefresh={refreshActiveTab} loading={loading} />
               </TabsContent>
-
+ 
               <TabsContent value="banks" className="mt-0 outline-none">
-                <BankPaymentTable data={banks} onRefresh={refreshActiveTab} />
+                <BankPaymentTable data={banks} onRefresh={refreshActiveTab} loading={loading} />
               </TabsContent>
 
               <TabsContent value="receipt" className="mt-0 outline-none">

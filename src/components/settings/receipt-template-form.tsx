@@ -83,7 +83,18 @@ export default function ReceiptTemplateForm() {
     })
   }
 
-  if (loading) return <div className="h-32 flex items-center justify-center text-muted-foreground"><RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading template...</div>
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="h-[400px] bg-muted rounded-lg" />
+          <div className="h-[400px] bg-muted rounded-lg" />
+        </div>
+        <div className="h-32 bg-muted rounded-lg w-full" />
+        <div className="h-10 w-32 bg-muted rounded-md" />
+      </div>
+    )
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

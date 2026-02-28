@@ -6,6 +6,7 @@ import POSView from "@/components/views/pos-view"
 import InventoryView from "@/components/views/inventory-view"
 import CustomersView from "@/components/views/customers-view"
 import TransactionsView from "@/components/views/transactions-view"
+import ReportsView from "@/components/views/reports-view"
 import SettingsView from "@/components/views/settings-view"
 import { cn } from "@/lib/utils"
 
@@ -19,6 +20,7 @@ export default function AppPage() {
       {currentView === 'inventory' && <InventoryView />}
       {currentView === 'customers' && <CustomersView />}
       {currentView === 'transactions' && <TransactionsView />}
+      {currentView === 'reports' && <ReportsView />}
       {currentView === 'settings' && <SettingsView />}
     </div>
   )
