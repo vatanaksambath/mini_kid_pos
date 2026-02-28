@@ -18,8 +18,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MiniKid POS - Apparel Management System",
+  title: "MiniKid POS",
   description: "Modern Point of Sale for Clothing Retail",
+  manifest: "/manifest.json",
+  themeColor: "#4f46e5",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "MiniKid POS",
+  },
 };
 
 export const dynamic = 'force-dynamic';
