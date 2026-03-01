@@ -15,7 +15,8 @@ export async function getProducts() {
           inventory:InventoryLevel(*)
         ),
         category:Category(*),
-        brand:Brand(*)
+        brand:Brand(*),
+        source:ProductSource(*)
       `)
       .order('updatedAt', { ascending: false })
 
@@ -31,8 +32,7 @@ export async function getProducts() {
       variants: (product.variants || []).map((variant: any) => ({
         ...variant,
         basePrice: Number(variant.basePrice),
-        costPrice: variant.costPrice ? Number(variant.costPrice) : 0,
-        priceOverride: variant.priceOverride ? Number(variant.priceOverride) : null,
+        costPrice: Number(variant.costPrice),
         colorName: colorMap.get(variant.color?.toLowerCase()) || variant.color
       }))
     }))
@@ -62,7 +62,8 @@ export async function getProductById(id: string) {
             *,
             location:StoreLocation(*)
           )
-        )
+        ),
+        source:ProductSource(*)
       `)
       .eq('id', id)
       .single()
@@ -77,8 +78,6 @@ export async function getProductById(id: string) {
       ...product,
       variants: (product.variants || []).map((variant: any) => ({
         ...variant,
-        basePrice: Number(variant.basePrice),
-        priceOverride: variant.priceOverride ? Number(variant.priceOverride) : null,
         colorName: colorMap.get(variant.color?.toLowerCase()) || variant.color
       }))
     }
@@ -95,6 +94,7 @@ export async function createProduct(data: {
   description?: string
   categoryId?: string
   brandId?: string
+  sourceId?: string
   imageUrl?: string
   stockDate?: string
   variants: {
@@ -116,6 +116,7 @@ export async function createProduct(data: {
         description: data.description || null,
         categoryId: data.categoryId || null,
         brandId: data.brandId || null,
+        sourceId: data.sourceId || null,
         imageUrl: data.imageUrl || null,
         stockDate: data.stockDate || null,
       })
@@ -212,6 +213,7 @@ export async function updateProduct(id: string, data: {
   description?: string
   categoryId?: string
   brandId?: string
+  sourceId?: string
   imageUrl?: string
   stockDate?: string
   variants: {
@@ -234,6 +236,7 @@ export async function updateProduct(id: string, data: {
         description: data.description || null,
         categoryId: data.categoryId || null,
         brandId: data.brandId || null,
+        sourceId: data.sourceId || null,
         imageUrl: data.imageUrl || null,
         stockDate: data.stockDate || null,
       })

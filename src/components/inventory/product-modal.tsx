@@ -1,7 +1,7 @@
 'use client'
 
 import { createProduct, updateProduct, generateUniqueSku } from '@/actions/inventory'
-import { getCategories, getBrands, getSizes, getColors } from '@/actions/settings'
+import { getCategories, getBrands, getSizes, getColors, getProductSources } from '@/actions/settings'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -79,6 +79,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
   const [brands, setBrands] = useState<any[]>([])
   const [sizes, setSizes] = useState<any[]>([])
   const [colors, setColors] = useState<any[]>([])
+  const [sources, setSources] = useState<any[]>([])
   const [isDragging, setIsDragging] = useState(false)
 
   // Product State
@@ -87,6 +88,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
   const [stockDate, setStockDate] = useState(new Date().toISOString().split('T')[0])
   const [categoryId, setCategoryId] = useState('')
   const [brandId, setBrandId] = useState('')
+  const [sourceId, setSourceId] = useState('')
   const [images, setImages] = useState<ProductImage[]>([])
   const [previewImage, setPreviewImage] = useState<string | null>(null)
 
@@ -102,6 +104,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
       setStockDate(product.stockDate ? new Date(product.stockDate).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA'))
       setCategoryId(product.categoryId || '')
       setBrandId(product.brandId || '')
+      setSourceId(product.sourceId || '')
       
       // Parse existing imageUrl string into an array
       let parsedImages: string[] = []
@@ -142,11 +145,14 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
   useEffect(() => {
     if (open) {
       const fetchData = async () => {
-        const [catRes, brandRes, sizeRes, colorRes] = await Promise.all([getCategories(), getBrands(), getSizes(), getColors()])
+        const [catRes, brandRes, sizeRes, colorRes, sourceRes] = await Promise.all([
+          getCategories(), getBrands(), getSizes(), getColors(), getProductSources()
+        ])
         if (catRes.success) setCategories(catRes.data || [])
         if (brandRes.success) setBrands(brandRes.data || [])
         if (sizeRes.success) setSizes(sizeRes.data || [])
         if (colorRes.success) setColors(colorRes.data || [])
+        if (sourceRes.success) setSources(sourceRes.data || [])
       }
       fetchData()
     }
@@ -254,6 +260,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
             stockDate: payloadStockDate,
             categoryId: categoryId === 'none' ? undefined : categoryId,
             brandId: brandId === 'none' ? undefined : brandId,
+            sourceId: sourceId === 'none' ? undefined : sourceId,
             imageUrl: payloadImageUrl,
             variants: formattedVariants,
           })
@@ -264,6 +271,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
             stockDate: payloadStockDate,
             categoryId: categoryId === 'none' ? undefined : categoryId,
             brandId: brandId === 'none' ? undefined : brandId,
+            sourceId: sourceId === 'none' ? undefined : sourceId,
             imageUrl: payloadImageUrl,
             variants: formattedVariants,
           })
@@ -291,6 +299,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
     setStockDate(new Date().toISOString().split('T')[0])
     setCategoryId('')
     setBrandId('')
+    setSourceId('')
     images.forEach(img => { if (img.type === 'new') URL.revokeObjectURL(img.url) })
     setImages([])
     setVariants([{ sku: '', sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
@@ -351,6 +360,23 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                   <SelectItem value="none">None</SelectItem>
                   {brands.map((b) => (
                     <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label>Source</Label>
+              <Select value={sourceId} onValueChange={setSourceId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {sources.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

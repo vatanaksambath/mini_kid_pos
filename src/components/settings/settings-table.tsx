@@ -22,10 +22,9 @@ import { Trash2, Edit, Plus } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { deleteSetting } from '@/actions/settings'
 import { useAppStore } from '@/store/use-app-store'
-
 interface SettingsTableProps {
   title: string
-  type: 'category' | 'brand' | 'social' | 'size' | 'color'
+  type: 'category' | 'brand' | 'social' | 'size' | 'color' | 'source'
   data: { id: string; name: string; hex?: string }[]
   onCreate: (name: string, hex?: string) => Promise<any>
   onUpdate: (id: string, name: string, hex?: string) => Promise<any>

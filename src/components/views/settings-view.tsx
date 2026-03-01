@@ -8,6 +8,7 @@ import {
   getColors, createColor, updateColor,
   getLoyaltyPrizes,
   getBankPaymentTypes,
+  getProductSources, createProductSource, updateProductSource
 } from '@/actions/settings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,7 @@ const TABS = [
   { value: 'colors',     label: 'Colors',     Icon: Palette },
   { value: 'loyalty',    label: 'Loyalty',    Icon: Gift },
   { value: 'banks',      label: 'Payment Methods', Icon: CreditCard },
+  { value: 'source',     label: 'Sources',    Icon: Tag },
   { value: 'receipt',    label: 'Receipt',    Icon: Receipt },
 ]
 
@@ -40,6 +42,7 @@ export default function SettingsView() {
   const [colors, setColors]           = useState<any[]>([])
   const [prizes, setPrizes]           = useState<any[]>([])
   const [banks, setBanks]             = useState<any[]>([])
+  const [sources, setSources]         = useState<any[]>([])
   const [loading, setLoading]         = useState(false)
   const [loadedTabs, setLoadedTabs]   = useState<Record<string, boolean>>({})
 
@@ -74,6 +77,10 @@ export default function SettingsView() {
         case 'banks':
           const bankRes = await getBankPaymentTypes()
           if (bankRes.success) setBanks(bankRes.data || [])
+          break
+        case 'source':
+          const sourceRes = await getProductSources()
+          if (sourceRes.success) setSources(sourceRes.data || [])
           break
       }
       setLoadedTabs(prev => ({ ...prev, [tab]: true }))
@@ -155,6 +162,10 @@ export default function SettingsView() {
  
               <TabsContent value="banks" className="mt-0 outline-none">
                 <BankPaymentTable data={banks} onRefresh={refreshActiveTab} loading={loading} />
+              </TabsContent>
+
+              <TabsContent value="source" className="mt-0 outline-none">
+                <SettingsTable title="Product Source" type="source" data={sources} onCreate={createProductSource} onUpdate={updateProductSource} onRefresh={refreshActiveTab} loading={loading} />
               </TabsContent>
 
               <TabsContent value="receipt" className="mt-0 outline-none">

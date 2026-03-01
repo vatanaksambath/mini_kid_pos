@@ -212,7 +212,40 @@ export async function deleteLoyaltyPrize(id: string) {
   }
 }
 
-export async function deleteSetting(type: 'category' | 'brand' | 'social' | 'size' | 'color' | 'bank', id: string) {
+// Product Sources
+export async function getProductSources() {
+  try {
+    const { data, error } = await supabase.from('ProductSource').select('*').order('name', { ascending: true })
+    if (error) throw error
+    return { success: true, data }
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch product sources' }
+  }
+}
+
+export async function createProductSource(name: string) {
+  try {
+    const { data, error } = await supabase.from('ProductSource').insert([{ name }]).select().single()
+    if (error) throw error
+    revalidatePath('/settings')
+    return { success: true, data }
+  } catch (error) {
+    return { success: false, error: 'Failed to create product source' }
+  }
+}
+
+export async function updateProductSource(id: string, name: string) {
+  try {
+    const { data, error } = await supabase.from('ProductSource').update({ name }).eq('id', id).select().single()
+    if (error) throw error
+    revalidatePath('/settings')
+    return { success: true, data }
+  } catch (error) {
+    return { success: false, error: 'Failed to update product source' }
+  }
+}
+
+export async function deleteSetting(type: 'category' | 'brand' | 'social' | 'size' | 'color' | 'bank' | 'source', id: string) {
   try {
     let error;
     if (type === 'category') {
@@ -227,6 +260,8 @@ export async function deleteSetting(type: 'category' | 'brand' | 'social' | 'siz
       ({ error } = await supabase.from('Color').delete().eq('id', id))
     } else if (type === 'bank') {
       ({ error } = await supabase.from('BankPaymentType').delete().eq('id', id))
+    } else if (type === 'source') {
+      ({ error } = await supabase.from('ProductSource').delete().eq('id', id))
     }
 
     if (error) throw error

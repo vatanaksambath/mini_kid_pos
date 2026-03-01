@@ -39,6 +39,11 @@ CREATE TABLE "SocialMediaType" (
     "name" TEXT NOT NULL UNIQUE
 );
 
+CREATE TABLE "ProductSource" (
+    "id" TEXT NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" TEXT NOT NULL UNIQUE
+);
+
 CREATE TABLE "Product" (
     "id" TEXT NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL,
@@ -49,16 +54,17 @@ CREATE TABLE "Product" (
     "phone1" TEXT,
     "phone2" TEXT,
     "logoUrl" TEXT,
-    "logoUrl" TEXT,
     "brandId" TEXT,
     "categoryId" TEXT,
+    "sourceId" TEXT,
     "brandName" TEXT,
     "categoryName" TEXT,
     "stockDate" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Product_brandId_fkey" FOREIGN KEY ("brandId") REFERENCES "Brand"("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Product_sourceId_fkey" FOREIGN KEY ("sourceId") REFERENCES "ProductSource"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 CREATE TABLE "ProductVariant" (
