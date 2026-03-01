@@ -37,10 +37,12 @@ import {
 
 export default function InventoryView() {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
-  const [products, setProducts]         = useState<any[]>([])
+  const products        = useAppStore(state => state.products)
+  const setProducts     = useAppStore(state => state.setProducts)
+  
   const [categories, setCategories]     = useState<any[]>([])
   const [brands, setBrands]             = useState<any[]>([])
-  const [loading, setLoading]           = useState(true)
+  const [loading, setLoading]           = useState(products.length === 0)
   const [error, setError]               = useState('')
   const [search, setSearch]             = useState('')
   const [printProduct, setPrintProduct] = useState<any | null>(null)
@@ -76,12 +78,12 @@ export default function InventoryView() {
   }, [api, previewImages])
 
   const loadProducts = useCallback(async (isSilent = false) => {
-    if (!isSilent) setLoading(true)
+    if (!isSilent && products.length === 0) setLoading(true)
     const res = await getProducts()
     if (res.success) setProducts(res.data || [])
     else setError(res.error || 'Failed to load inventory')
     setLoading(false)
-  }, [])
+  }, [products.length, setProducts])
 
   useEffect(() => {
     loadProducts()

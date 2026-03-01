@@ -14,14 +14,28 @@ export default function AppPage() {
   const currentView = useAppStore((state) => state.currentView)
 
   return (
-    <div className="flex-1 relative">
-      {currentView === 'dashboard' && <DashboardView />}
-      {currentView === 'pos' && <POSView />}
-      {currentView === 'inventory' && <InventoryView />}
-      {currentView === 'customers' && <CustomersView />}
-      {currentView === 'transactions' && <TransactionsView />}
-      {currentView === 'reports' && <ReportsView />}
-      {currentView === 'settings' && <SettingsView />}
+    <div className="flex-1 relative h-full overflow-hidden">
+      <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'dashboard' && "hidden")}>
+        <DashboardView />
+      </div>
+      <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'pos' && "hidden")}>
+        <POSView />
+      </div>
+      <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'inventory' && "hidden")}>
+        <InventoryView />
+      </div>
+      <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'customers' && "hidden")}>
+        <CustomersView />
+      </div>
+      <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'transactions' && "hidden")}>
+        <TransactionsView />
+      </div>
+      <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'reports' && "hidden")}>
+        <ReportsView />
+      </div>
+      <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'settings' && "hidden")}>
+        <SettingsView />
+      </div>
     </div>
   )
 }

@@ -29,9 +29,11 @@ import { useAppStore } from '@/store/use-app-store'
 
 export default function CustomersView() {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
-  const [customers, setCustomers]       = useState<any[]>([])
+  const customers       = useAppStore(state => state.customers)
+  const setCustomers     = useAppStore(state => state.setCustomers)
+  
   const [socialTypes, setSocialTypes]   = useState<any[]>([])
-  const [loading, setLoading]           = useState(true)
+  const [loading, setLoading]           = useState(customers.length === 0)
   const [search, setSearch]             = useState('')
   const [currentPage, setCurrentPage]   = useState(1)
   const [itemsPerPage]                  = useState(10)
@@ -47,11 +49,11 @@ export default function CustomersView() {
   })
 
   const loadCustomers = useCallback(async (isSilent = false) => {
-    if (!isSilent) setLoading(true)
+    if (!isSilent && customers.length === 0) setLoading(true)
     const res = await getCustomers()
     if (res.success) setCustomers(res.data || [])
     setLoading(false)
-  }, [])
+  }, [customers.length, setCustomers])
 
   useEffect(() => {
     loadCustomers()

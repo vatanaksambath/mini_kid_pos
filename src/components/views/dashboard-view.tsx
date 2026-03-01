@@ -25,12 +25,17 @@ interface Stats {
 
 export default function DashboardView() {
   const setCurrentView = useAppStore((state) => state.setCurrentView)
+  const products       = useAppStore((state) => state.products)
+  const setProducts    = useAppStore((state) => state.setProducts)
+  const customers      = useAppStore((state) => state.customers)
+  const setCustomers   = useAppStore((state) => state.setCustomers)
+  
   const [stats, setStats] = useState<Stats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(products.length === 0 || customers.length === 0)
 
   useEffect(() => {
     async function loadStats() {
-      setLoading(true)
+      if (products.length === 0 || customers.length === 0) setLoading(true)
       try {
         const [productsRes, customersRes, ordersRes] = await Promise.all([
           getProducts(),
@@ -42,18 +47,21 @@ export default function DashboardView() {
             .limit(5),
         ])
 
-        const products = productsRes.data || []
-        const customers = customersRes.data || []
-        const orders = ordersRes.data || []
+        const productsData = productsRes.success ? productsRes.data || [] : products
+        const customersData = customersRes.success ? customersRes.data || [] : customers
+        const ordersData = ordersRes.data || []
 
-        const totalStock = products.reduce((acc: number, p: any) =>
+        if (productsRes.success) setProducts(productsData)
+        if (customersRes.success) setCustomers(customersData)
+
+        const totalStock = productsData.reduce((acc: number, p: any) =>
           acc + p.variants.reduce((a2: number, v: any) =>
             a2 + (v.inventory?.reduce((a3: number, i: any) => a3 + i.quantity, 0) || 0), 0), 0)
 
-        const totalRevenue = orders.reduce((s: number, o: any) => s + Number(o.totalAmount), 0)
+        const totalRevenue = ordersData.reduce((s: number, o: any) => s + Number(o.totalAmount), 0)
 
         // Top 5 products by stock
-        const topProducts = [...products]
+        const topProducts = [...productsData]
           .map((p: any) => ({
             name: p.name,
             stock: p.variants.reduce((a: number, v: any) =>
@@ -64,11 +72,11 @@ export default function DashboardView() {
 
         setStats({
           totalRevenue,
-          totalOrders: orders.length,
-          totalProducts: products.length,
-          totalCustomers: customers.length,
+          totalOrders: ordersData.length,
+          totalProducts: productsData.length,
+          totalCustomers: customersData.length,
           totalStock,
-          recentOrders: orders,
+          recentOrders: ordersData,
           topProducts,
         })
       } catch (e) {
@@ -77,7 +85,7 @@ export default function DashboardView() {
       setLoading(false)
     }
     loadStats()
-  }, [])
+  }, [products.length, customers.length, setProducts, setCustomers])
 
   const statCards = stats
     ? [

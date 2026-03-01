@@ -28,12 +28,16 @@ import {
 import { ShoppingBag, Download, RefreshCw, Search, Settings2, ChevronDown, ChevronRight, X, Printer, Eye, CheckCircle2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import * as XLSX from 'xlsx'
+import { useAppStore } from '@/store/use-app-store'
 
 const PAYMENT_METHODS = ['CASH', 'CARD', 'GIFT_CARD', 'MOBILE_PAYMENT', 'BANK_TRANSFER']
 
 export default function TransactionsView() {
-  const [orders, setOrders] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
+  const orders          = useAppStore(state => state.orders)
+  const setOrders       = useAppStore(state => state.setOrders)
+  
+  const [loading, setLoading]           = useState(orders.length === 0)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
   const [search, setSearch] = useState('')
@@ -57,7 +61,7 @@ export default function TransactionsView() {
   })
 
   const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true)
+    if (!silent && orders.length === 0) setLoading(true)
     const [ordersRes, tmplRes] = await Promise.all([
       getOrders(500), // Increased limit for history but still capped
       getReceiptTemplate()
@@ -68,7 +72,7 @@ export default function TransactionsView() {
       setExcRate(tmplRes.data.exchangeRate || 4100)
     }
     setLoading(false)
-  }, [])
+  }, [orders.length, setOrders])
 
   useEffect(() => { 
     load()

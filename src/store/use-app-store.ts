@@ -34,6 +34,14 @@ interface AppState {
   updateQuantity: (sku: string, delta: number) => void
   removeItem: (sku: string) => void
   clearCart: () => void
+
+  // Global Data Cache
+  products: any[]
+  setProducts: (products: any[]) => void
+  orders: any[]
+  setOrders: (orders: any[]) => void
+  customers: any[]
+  setCustomers: (customers: any[]) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -73,4 +81,11 @@ export const useAppStore = create<AppState>((set) => ({
     cart: state.cart.filter((item) => item.sku !== sku)
   })),
   clearCart: () => set({ cart: [] }),
+
+  products: [],
+  setProducts: (products) => set({ products }),
+  orders: [],
+  setOrders: (orders) => set({ orders }),
+  customers: [],
+  setCustomers: (customers) => set({ customers }),
 }))
