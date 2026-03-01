@@ -271,6 +271,7 @@ export async function getOrders(limit = 100) {
           *,
           variant:ProductVariant(
             sku,
+            size:Size(name),
             product:Product(name)
           )
         ),

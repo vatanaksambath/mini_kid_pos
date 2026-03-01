@@ -29,18 +29,25 @@ export function buildReceiptHtml(order: any, template: any, excRate: number): st
   const date = parseUTCDate(order.createdAt).toLocaleString()
   const invoiceNo = (order.orderNumber || '').substring(0, 10).toUpperCase()
 
-  const rows = (order.items || []).map((item: any, i: number) => `
+  const rows = (order.items || []).map((item: any, i: number) => {
+    // Determine product display name (combine name and size)
+    const pName = item.variant?.product?.name || item.name || item.sku || ''
+    const sName = item.variant?.size?.name || ''
+    const displayName = sName ? `${pName} (${sName})` : pName
+
+    return `
     <tr>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;vertical-align:top;">${i + 2}</td>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;">
-        <div class="bold">${item.name || item.sku || ''}</div>
+        <div class="bold">${displayName}</div>
         ${item.description ? `<div style="font-size:9px;color:#666;font-style:italic;">${item.description}</div>` : ''}
       </td>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;text-align:center;vertical-align:top;">${item.quantity}</td>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;text-align:right;vertical-align:top;">${Number(item.price).toFixed(2)}</td>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;text-align:right;vertical-align:top;">${Number(item.price).toFixed(2)}</td>
       <td style="padding:3px 4px;border-bottom:1px solid #eee;text-align:right;vertical-align:top;">$${(item.quantity * item.price).toFixed(2)}</td>
-    </tr>`).join('')
+    </tr>`
+  }).join('')
 
   const deliveryRow = (shipping >= 0) ? `
     <tr>
@@ -74,7 +81,7 @@ export function buildReceiptHtml(order: any, template: any, excRate: number): st
 <table style="margin-bottom:6px;">
   <tr><td class="gray">Invoice No</td><td class="bold">: ${invoiceNo}</td></tr>
   <tr><td class="gray">Date</td><td>: ${date}</td></tr>
-  <tr><td class="gray">Customer</td><td>: ${order.customer?.name || 'Walk-in'}</td></tr>
+  <tr><td class="gray">Customer</td><td>: ${order.customer?.name || 'Online'}</td></tr>
   ${order.customer?.phone ? `<tr><td class="gray">Phone</td><td>: ${order.customer.phone}</td></tr>` : ''}
 </table>
 <table>

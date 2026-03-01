@@ -220,26 +220,27 @@ export default function ReportsView() {
         </Card>
       </div>
 
-      {/* Details Table */}
-      <Card className="glass-card shadow-xl border-primary/5">
-        <CardHeader>
-          <CardTitle>Sales Breakdown</CardTitle>
+      {/* Details Table / Mobile cards */}
+      <Card className="glass-card shadow-xl border-none sm:border">
+        <CardHeader className="pb-2 sm:pb-4">
+          <CardTitle className="text-xl sm:text-2xl">Sales Breakdown</CardTitle>
           <CardDescription>Detailed transaction log for the selected period</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="relative overflow-x-auto rounded-lg border">
+        <CardContent className="p-0 sm:p-6">
+          {/* Desktop Table */}
+          <div className="hidden md:block relative overflow-x-auto rounded-lg border">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs uppercase bg-muted/50 font-bold border-b">
+              <thead className="text-xs uppercase bg-muted/50 font-bold border-b text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Order #</th>
                   <th className="px-4 py-3 text-right">Revenue</th>
                   <th className="px-4 py-3 text-right">Cost</th>
-                  <th className="px-4 py-3 text-right">Profit</th>
+                  <th className="px-4 py-3 text-right font-black">Profit</th>
                   <th className="px-4 py-3 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y overflow-auto h-[300px]">
+              <tbody className="divide-y">
                 {loading ? (
                   [1, 2, 3].map(i => <tr key={i}><td colSpan={6} className="h-12 bg-muted/10 animate-pulse" /></tr>)
                 ) : salesData.length === 0 ? (
@@ -253,14 +254,14 @@ export default function ReportsView() {
                     return (
                       <tr key={idx} className="hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3 font-medium">{parseUTCDate(order.createdAt).toLocaleDateString()}</td>
-                        <td className="px-4 py-3 font-mono text-xs opacity-60 uppercase">{order.orderNumber || order.id.substring(0, 8)}</td>
-                        <td className="px-4 py-3 text-right font-bold text-blue-600">${revenue.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right text-red-500">-${cost.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right font-black text-emerald-600">${profit.toFixed(2)}</td>
+                        <td className="px-4 py-3 font-mono text-xs opacity-60 uppercase tracking-tighter">{order.orderNumber || order.id.substring(0, 8)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-blue-600 tabular-nums">${revenue.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right text-red-500 tabular-nums">-${cost.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right font-black text-emerald-600 tabular-nums">${profit.toFixed(2)}</td>
                         <td className="px-4 py-3 text-center">
                           <span className={cn(
-                            "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-                            order.status === 'COMPLETED' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                            "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
+                            order.status === 'COMPLETED' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"
                           )}>
                             {order.status === 'COMPLETED' ? 'Paid' : 'Pending'}
                           </span>
@@ -271,6 +272,58 @@ export default function ReportsView() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card List */}
+          <div className="md:hidden flex flex-col divide-y bg-background border-t">
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="p-4 space-y-2 animate-pulse">
+                  <div className="flex justify-between h-4 w-full bg-muted rounded" />
+                  <div className="h-3 w-1/2 bg-muted rounded opacity-60" />
+                </div>
+              ))
+            ) : salesData.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground text-sm">No records found for this period.</div>
+            ) : (
+              salesData.map((order, idx) => {
+                const cost = order.items?.reduce((sum: number, item: any) => sum + (Number(item.costPrice || 0) * item.quantity), 0)
+                const revenue = Number(order.totalAmount)
+                const profit = revenue - cost
+                
+                return (
+                  <div key={idx} className="p-4 flex flex-col gap-2">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-0.5">
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{parseUTCDate(order.createdAt).toLocaleDateString()}</div>
+                        <div className="font-mono text-xs font-black text-primary">#{order.orderNumber?.substring(0, 10).toUpperCase() || order.id.substring(0, 8).toUpperCase()}</div>
+                      </div>
+                      <div className={cn(
+                        "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
+                        order.status === 'COMPLETED' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                      )}>
+                        {order.status === 'COMPLETED' ? 'Paid' : 'Pending'}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 pt-2">
+                      <div className="bg-blue-500/5 p-2 rounded-lg border border-blue-500/10">
+                        <div className="text-[8px] font-bold text-blue-600 uppercase mb-0.5">Rev</div>
+                        <div className="text-xs font-black tabular-nums">${revenue.toFixed(2)}</div>
+                      </div>
+                      <div className="bg-red-500/5 p-2 rounded-lg border border-red-500/10">
+                        <div className="text-[8px] font-bold text-red-600 uppercase mb-0.5">Cost</div>
+                        <div className="text-xs font-black tabular-nums">-${cost.toFixed(2)}</div>
+                      </div>
+                      <div className="bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10">
+                        <div className="text-[8px] font-bold text-emerald-600 uppercase mb-0.5">Profit</div>
+                        <div className="text-xs font-black text-emerald-600 tabular-nums">${profit.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
         </CardContent>
       </Card>

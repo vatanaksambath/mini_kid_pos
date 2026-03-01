@@ -3,7 +3,8 @@
 import { usePathname } from "next/navigation"
 import NavContent from "./nav-content"
 import { useAppStore, ViewType } from "@/store/use-app-store"
-import { LayoutDashboard, MonitorPlay, Package, Users, Settings } from "lucide-react"
+import { LayoutDashboard, MonitorPlay, Package, Users, Settings, History, BarChart3, Menu } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 export default function Nav() {
   const pathname = usePathname()
@@ -16,7 +17,12 @@ export default function Nav() {
     { name: 'Inventory', view: 'inventory', icon: Package },
     { name: 'Dashboard', view: 'dashboard', icon: LayoutDashboard },
     { name: 'Customers', view: 'customers', icon: Users },
-    { name: 'More', view: 'settings', icon: Settings },
+  ]
+
+  const moreItems: { name: string; view: ViewType; icon: any }[] = [
+    { name: "Transactions", view: "transactions", icon: History },
+    { name: "Reports", view: "reports", icon: BarChart3 },
+    { name: "Settings", view: "settings", icon: Settings },
   ]
 
   return (
@@ -44,8 +50,43 @@ export default function Nav() {
               </button>
             )
           })}
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="flex flex-col items-center justify-center w-full h-full gap-1 text-muted-foreground hover:text-foreground outline-none">
+                <Menu className="h-5 w-5" strokeWidth={2} />
+                <span className="text-[10px] font-medium">More</span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-2xl pb-10">
+              <SheetHeader className="text-left mb-6">
+                <SheetTitle>Quick Access</SheetTitle>
+              </SheetHeader>
+              <div className="grid grid-cols-1 gap-4">
+                {moreItems.map((item) => {
+                  const isActive = currentView === item.view
+                  return (
+                    <button
+                      key={item.name}
+                      onClick={() => setCurrentView(item.view)}
+                      className={cn(
+                        "flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-200",
+                        isActive 
+                          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
+                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <item.icon className="h-6 w-6" />
+                      <span className="font-semibold">{item.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </nav>
     </>
   )
 }
+import { cn } from "@/lib/utils"

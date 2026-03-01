@@ -183,7 +183,7 @@ export default function DashboardView() {
                 <tbody>
                   {stats?.recentOrders.map((o: any) => (
                     <tr key={o.id} className="border-b last:border-0 hover:bg-muted/10">
-                      <td className="p-3 font-medium">{o.customer?.name || 'Walk-in'}</td>
+                      <td className="p-3 font-medium">{o.customer?.name || 'Online'}</td>
                       <td className="p-3 text-muted-foreground text-xs">
                         {new Date(o.createdAt).toLocaleDateString()}
                       </td>

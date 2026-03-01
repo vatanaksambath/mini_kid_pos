@@ -52,6 +52,8 @@ export default function Header() {
       case 'pos': return 'Register'
       case 'inventory': return 'Inventory'
       case 'customers': return 'Customers'
+      case 'transactions': return 'Transactions'
+      case 'reports': return 'Reports'
       case 'settings': return 'Configuration'
       default: return 'MiniKid POS'
     }

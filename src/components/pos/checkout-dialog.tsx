@@ -48,8 +48,8 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
 
   // Form state
   const [selectedLocation, setSelectedLocation]     = useState('')
-  const [selectedCustomer, setSelectedCustomer]     = useState<string>('walk-in')
-  const [customerSearch, setCustomerSearch]         = useState('')
+  const [selectedCustomer, setSelectedCustomer]     = useState<string>('online')
+  const [customerSearch, setCustomerSearch]         = useState('Online Customer')
   const [showCustomerList, setShowCustomerList]     = useState(false)
   const [paymentMethodId, setPaymentMethodId]         = useState<string>('')
   const [discountType, setDiscountType]             = useState<'none' | 'flat' | 'percent'>('none')
@@ -155,7 +155,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
 
       const result = await createOrder({
         locationId: selectedLocation,
-        customerId: selectedCustomer === 'walk-in' ? undefined : selectedCustomer,
+        customerId: selectedCustomer === 'online' ? undefined : selectedCustomer,
         totalAmount: finalTotal,
         discountAmount,
         discountType,
@@ -203,7 +203,7 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
       setCurrentView('pos')
     }
     setDiscountType('none'); setDiscountValue(''); setReceivedAmount(''); setReceivedAmountRiel('')
-    setSelectedCustomer('walk-in'); setCustomerSearch('')
+    setSelectedCustomer('online'); setCustomerSearch('Online Customer')
     setRedeemPoints(false); setShowQuickAdd(false)
     if (bankTypes.length) setPaymentMethodId(bankTypes[0].id)
   }
@@ -255,15 +255,15 @@ export default function CheckoutDialog({ total, items, onSuccess }: CheckoutDial
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       className="h-12 pl-10 text-base"
-                      placeholder="Search customer or Walk-in..."
+                      placeholder="Search customer or Online..."
                       value={customerSearch}
-                      onChange={e => { setCustomerSearch(e.target.value); setShowCustomerList(true); setSelectedCustomer('walk-in') }}
+                      onChange={e => { setCustomerSearch(e.target.value); setShowCustomerList(true); setSelectedCustomer('online') }}
                       onFocus={() => setShowCustomerList(true)}
                     />
                     {showCustomerList && (
                       <div className="absolute z-50 mt-1 w-full bg-popover border rounded-lg shadow-lg max-h-44 overflow-y-auto">
-                        <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 text-muted-foreground italic" onClick={() => { setSelectedCustomer('walk-in'); setCustomerSearch(''); setShowCustomerList(false) }}>
-                          Walk-in Customer
+                        <button className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 text-muted-foreground italic" onClick={() => { setSelectedCustomer('online'); setCustomerSearch('Online Customer'); setShowCustomerList(false) }}>
+                          Online Customer
                         </button>
                         {filteredCustomers.map(c => (
                           <button key={c.id} className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50" onClick={() => handleSelectCustomer(c.id, c.name)}>
