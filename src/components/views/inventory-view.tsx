@@ -308,7 +308,18 @@ export default function InventoryView() {
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}><TableCell colSpan={8} className="h-16 animate-pulse bg-muted/10 pt-4 pb-4"><div className="h-full w-full bg-muted/20 rounded"></div></TableCell></TableRow>
+                  <TableRow key={i}>
+                    {visibleColumns.no && <TableCell className="pl-4"><div className="h-4 w-4 mx-auto bg-muted/20 animate-pulse rounded" /></TableCell>}
+                    {visibleColumns.image && <TableCell className="pl-4"><div className="h-12 w-12 bg-muted/20 animate-pulse rounded-lg border border-dashed" /></TableCell>}
+                    {visibleColumns.info && <TableCell className="space-y-2"><div className="h-4 w-32 bg-muted/20 animate-pulse rounded" /><div className="h-3 w-48 bg-muted/20 animate-pulse rounded" /></TableCell>}
+                    {visibleColumns.brand && <TableCell><div className="h-6 w-16 bg-muted/20 animate-pulse rounded" /></TableCell>}
+                    {visibleColumns.category && <TableCell><div className="h-4 w-20 bg-muted/20 animate-pulse rounded" /></TableCell>}
+                    {visibleColumns.costPrice && <TableCell><div className="h-4 w-12 ml-auto bg-muted/20 animate-pulse rounded" /></TableCell>}
+                    {visibleColumns.sellingPrice && <TableCell><div className="h-4 w-12 ml-auto bg-muted/20 animate-pulse rounded" /></TableCell>}
+                    {visibleColumns.stock && <TableCell><div className="h-4 w-24 bg-muted/20 animate-pulse rounded" /></TableCell>}
+                    {visibleColumns.stockDate && <TableCell><div className="h-4 w-20 bg-muted/20 animate-pulse rounded" /></TableCell>}
+                    <TableCell><div className="h-8 w-24 mx-auto bg-muted/20 animate-pulse rounded" /></TableCell>
+                  </TableRow>
                 ))
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
@@ -338,6 +349,9 @@ export default function InventoryView() {
                               <img
                                 src={firstImage}
                                 alt={product.name}
+                                loading="lazy"
+                                width={48}
+                                height={48}
                                 className="h-12 w-12 object-cover rounded-lg shadow-sm border border-border/50 hover:opacity-80 transition-opacity cursor-pointer"
                                 onClick={() => setPreviewImages(allImages)}
                               />
@@ -460,12 +474,15 @@ export default function InventoryView() {
                       <div className="shrink-0 relative">
                         {firstImage ? (
                           <div className="relative">
-                            <img
-                              src={firstImage}
-                              alt={product.name}
-                              className="h-16 w-16 object-cover rounded-lg border shadow-sm cursor-pointer"
-                              onClick={() => setPreviewImages(allImages)}
-                            />
+                              <img
+                                src={firstImage}
+                                alt={product.name}
+                                loading="lazy"
+                                width={64}
+                                height={64}
+                                className="h-16 w-16 object-cover rounded-lg border shadow-sm cursor-pointer"
+                                onClick={() => setPreviewImages(allImages)}
+                              />
                             {extraCount > 0 && (
                               <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                                 +{extraCount}
