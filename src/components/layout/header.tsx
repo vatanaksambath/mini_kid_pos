@@ -49,7 +49,7 @@ export default function Header() {
   const getTitle = (view: string) => {
     switch (view) {
       case 'dashboard': return 'Dashboard'
-      case 'pos': return 'Register'
+      case 'pos': return 'POS'
       case 'inventory': return 'Inventory'
       case 'customers': return 'Customers'
       case 'transactions': return 'Transactions'

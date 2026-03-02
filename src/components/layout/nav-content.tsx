@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 
 const navItems: { name: string; view: ViewType; icon: any }[] = [
   { name: "Dashboard", view: "dashboard", icon: LayoutDashboard },
-  { name: "Register (POS)", view: "pos", icon: ShoppingCart },
+  { name: "POSs", view: "pos", icon: ShoppingCart },
   { name: "Inventory", view: "inventory", icon: Package },
   { name: "Customers", view: "customers", icon: Users },
   { name: "Transactions", view: "transactions", icon: History },

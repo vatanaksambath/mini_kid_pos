@@ -85,7 +85,7 @@ export default function POSView() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-8 min-h-screen animate-in fade-in duration-500 pb-52 lg:pb-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">Register</h2>
+        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">POS</h2>
         <div className="flex items-center space-x-2">
           <Button variant={isScanning ? "destructive" : "default"} onClick={() => setIsScanning(!isScanning)} size="sm" className="h-10 sm:h-9">
             <Scan className="mr-2 h-4 w-4" />
