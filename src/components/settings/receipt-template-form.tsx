@@ -57,13 +57,47 @@ export default function ReceiptTemplateForm() {
     })
   }, [])
 
-  const handleImageFile = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onloadend = () => setter(reader.result as string)
-    reader.readAsDataURL(file)
+  // Compress image before storing to reduce DB payload size
+  const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let { width, height } = img
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height)
+            width = Math.round(width * ratio)
+            height = Math.round(height * ratio)
+          }
+          canvas.width = width
+          canvas.height = height
+          canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
+          resolve(canvas.toDataURL('image/jpeg', quality))
+        }
+        img.onerror = reject
+        img.src = reader.result as string
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
   }
+
+  const handleImageFile = (setter: (v: string) => void, maxW: number, maxH: number, quality: number) =>
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      try {
+        const compressed = await compressImage(file, maxW, maxH, quality)
+        setter(compressed)
+      } catch {
+        // Fallback to raw data URL if compression fails
+        const reader = new FileReader()
+        reader.onloadend = () => setter(reader.result as string)
+        reader.readAsDataURL(file)
+      }
+    }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -188,7 +222,7 @@ export default function ReceiptTemplateForm() {
                 <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('qr-upload')?.click()}>
                   <Upload className="h-3 w-3 mr-1" /> Upload QR
                 </Button>
-                <input id="qr-upload" type="file" accept="image/*" className="hidden" onChange={handleImageFile(setBankQrImageUrl)} />
+                <input id="qr-upload" type="file" accept="image/*" className="hidden" onChange={handleImageFile(setBankQrImageUrl, 300, 300, 0.85)} />
                 {bankQrImageUrl && <img src={bankQrImageUrl} alt="Bank QR" className="h-12 w-12 object-contain rounded border" />}
               </div>
             </div>
@@ -198,7 +232,7 @@ export default function ReceiptTemplateForm() {
                 <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('logo-upload')?.click()}>
                   <Upload className="h-3 w-3 mr-1" /> Upload Logo
                 </Button>
-                <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={handleImageFile(setLogoUrl)} />
+                <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={handleImageFile(setLogoUrl, 200, 200, 0.75)} />
                 {logoUrl && <img src={logoUrl} alt="Logo" className="h-10 w-10 object-contain rounded border" />}
               </div>
             </div>
