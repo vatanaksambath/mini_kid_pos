@@ -2,17 +2,25 @@
 
 import { supabase } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
+import { unstable_cache } from 'next/cache'
+
+// ─── Cached thin wrappers for read-only, rarely-changing reference data ───────
+// These caches are automatically busted when revalidatePath('/') is called on any mutation.
 
 // Categories
-export async function getCategories() {
-  try {
-    const { data, error } = await supabase.from('Category').select('*').order('name', { ascending: true })
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch categories' }
-  }
-}
+export const getCategories = unstable_cache(
+  async () => {
+    try {
+      const { data, error } = await supabase.from('Category').select('*').order('name', { ascending: true })
+      if (error) throw error
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: 'Failed to fetch categories' }
+    }
+  },
+  ['categories'],
+  { revalidate: 60, tags: ['categories'] }
+)
 
 export async function createCategory(name: string) {
   try {
@@ -37,15 +45,19 @@ export async function updateCategory(id: string, name: string) {
 }
 
 // Brands
-export async function getBrands() {
-  try {
-    const { data, error } = await supabase.from('Brand').select('*').order('name', { ascending: true })
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch brands' }
-  }
-}
+export const getBrands = unstable_cache(
+  async () => {
+    try {
+      const { data, error } = await supabase.from('Brand').select('*').order('name', { ascending: true })
+      if (error) throw error
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: 'Failed to fetch brands' }
+    }
+  },
+  ['brands'],
+  { revalidate: 60, tags: ['brands'] }
+)
 
 export async function createBrand(name: string) {
   try {
@@ -70,15 +82,19 @@ export async function updateBrand(id: string, name: string) {
 }
 
 // Social Media Types
-export async function getSocialMediaTypes() {
-  try {
-    const { data, error } = await supabase.from('SocialMediaType').select('*').order('name', { ascending: true })
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch social media types' }
-  }
-}
+export const getSocialMediaTypes = unstable_cache(
+  async () => {
+    try {
+      const { data, error } = await supabase.from('SocialMediaType').select('*').order('name', { ascending: true })
+      if (error) throw error
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: 'Failed to fetch social media types' }
+    }
+  },
+  ['social-media-types'],
+  { revalidate: 60, tags: ['social-media-types'] }
+)
 
 export async function createSocialMediaType(name: string) {
   try {
@@ -103,15 +119,19 @@ export async function updateSocialMediaType(id: string, name: string) {
 }
 
 // Sizes
-export async function getSizes() {
-  try {
-    const { data, error } = await supabase.from('Size').select('*').order('name', { ascending: true })
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch sizes' }
-  }
-}
+export const getSizes = unstable_cache(
+  async () => {
+    try {
+      const { data, error } = await supabase.from('Size').select('*').order('name', { ascending: true })
+      if (error) throw error
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: 'Failed to fetch sizes' }
+    }
+  },
+  ['sizes'],
+  { revalidate: 60, tags: ['sizes'] }
+)
 
 export async function createSize(name: string) {
   try {
@@ -136,15 +156,19 @@ export async function updateSize(id: string, name: string) {
 }
 
 // Colors
-export async function getColors() {
-  try {
-    const { data, error } = await supabase.from('Color').select('*').order('name', { ascending: true })
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch colors' }
-  }
-}
+export const getColors = unstable_cache(
+  async () => {
+    try {
+      const { data, error } = await supabase.from('Color').select('*').order('name', { ascending: true })
+      if (error) throw error
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: 'Failed to fetch colors' }
+    }
+  },
+  ['colors'],
+  { revalidate: 60, tags: ['colors'] }
+)
 
 export async function createColor(name: string, hex?: string) {
   try {
@@ -213,15 +237,19 @@ export async function deleteLoyaltyPrize(id: string) {
 }
 
 // Product Sources
-export async function getProductSources() {
-  try {
-    const { data, error } = await supabase.from('ProductSource').select('*').order('name', { ascending: true })
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    return { success: false, error: 'Failed to fetch product sources' }
-  }
-}
+export const getProductSources = unstable_cache(
+  async () => {
+    try {
+      const { data, error } = await supabase.from('ProductSource').select('*').order('name', { ascending: true })
+      if (error) throw error
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: 'Failed to fetch product sources' }
+    }
+  },
+  ['product-sources'],
+  { revalidate: 60, tags: ['product-sources'] }
+)
 
 export async function createProductSource(name: string) {
   try {
@@ -329,7 +357,7 @@ export async function updateBankPaymentType(id: string, data: {
   }
 }
 
-// Receipt Template
+// Receipt Template — NOT cached (can contain large base64 logo/QR images)
 export async function getReceiptTemplate() {
   try {
     const { data, error } = await supabase.from('ReceiptTemplate').select('*').eq('id', 'default').single()

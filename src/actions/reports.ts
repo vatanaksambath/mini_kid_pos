@@ -1,10 +1,8 @@
 'use server'
 
 import { supabase } from '@/lib/supabase'
-import { unstable_noStore as noStore } from 'next/cache'
 
 export async function getSalesReport(startDate?: string, endDate?: string) {
-  noStore()
   try {
     let query = supabase
       .from('Order')
@@ -46,7 +44,6 @@ export async function getSalesReport(startDate?: string, endDate?: string) {
 }
 
 export async function getTopSellingProducts(limit = 10) {
-  noStore()
   try {
     // Use server-side aggregation via Supabase RPC for efficiency.
     // Falls back to client-side grouping if the function isn't set up yet.

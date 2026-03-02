@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { getSalesReport, getTopSellingProducts } from '@/actions/reports'
 import { parseUTCDate } from '@/lib/receipt-utils'
+import { useAppStore } from '@/store/use-app-store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,7 +29,9 @@ export default function ReportsView() {
   })
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0])
 
-  const loadData = async () => {
+  const currentView = useAppStore(state => state.currentView)
+
+  const loadData = useCallback(async () => {
     setLoading(true)
     const [salesRes, productsRes] = await Promise.all([
       getSalesReport(dateFrom, dateTo),
@@ -37,11 +40,15 @@ export default function ReportsView() {
     if (salesRes.success) setSalesData(salesRes.data || [])
     if (productsRes.success) setTopProducts(productsRes.data || [])
     setLoading(false)
-  }
-
-  useEffect(() => {
-    loadData()
   }, [dateFrom, dateTo])
+
+  // Reload when date filters change
+  useEffect(() => { loadData() }, [dateFrom, dateTo]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Silent refresh every time user navigates to reports view
+  useEffect(() => {
+    if (currentView === 'reports') loadData()
+  }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculations
   const stats = useMemo(() => {

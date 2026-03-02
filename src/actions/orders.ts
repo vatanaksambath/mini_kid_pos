@@ -1,7 +1,7 @@
 'use server'
 
 import { supabase } from '@/lib/supabase'
-import { revalidatePath, unstable_noStore as noStore } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 
@@ -269,7 +269,6 @@ export async function updateCustomer(id: string, data: any) {
 }
 
 export async function getOrders(limit = 100) {
-  noStore();
   try {
     const { data, error } = await supabase
       .from('Order')

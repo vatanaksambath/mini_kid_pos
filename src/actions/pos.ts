@@ -4,9 +4,9 @@ import { supabase } from '@/lib/supabase'
 
 export async function getVariantBySKU(sku: string) {
   try {
-    const { data: variant, error } = await supabase
-      .from('ProductVariant')
-      .select(`
+    // Fetch variant and colors IN PARALLEL — eliminates one sequential roundtrip
+    const [variantResult, colorsResult] = await Promise.all([
+      supabase.from('ProductVariant').select(`
         *,
         product:Product(*),
         size:Size(*),
@@ -14,23 +14,21 @@ export async function getVariantBySKU(sku: string) {
           *,
           location:StoreLocation(*)
         )
-      `)
-      .eq('sku', sku)
-      .single()
-      
-    if (error || !variant) {
+      `).eq('sku', sku).single(),
+      supabase.from('Color').select('*')
+    ])
+
+    if (variantResult.error || !variantResult.data) {
       return { success: false, error: 'Product not found' }
     }
 
-    // Fetch all colors to map hex to name
-    const { data: colors } = await supabase.from('Color').select('*')
-    const colorMap = new Map(colors?.map(c => [c.hex.toLowerCase(), c.name]) || [])
+    const colorMap = new Map(colorsResult.data?.map(c => [c.hex.toLowerCase(), c.name]) || [])
 
     const serializedVariant = {
-      ...variant,
-      basePrice: Number(variant.basePrice),
-      priceOverride: variant.priceOverride ? Number(variant.priceOverride) : null,
-      colorName: colorMap.get(variant.color?.toLowerCase()) || variant.color
+      ...variantResult.data,
+      basePrice: Number(variantResult.data.basePrice),
+      priceOverride: variantResult.data.priceOverride ? Number(variantResult.data.priceOverride) : null,
+      colorName: colorMap.get(variantResult.data.color?.toLowerCase()) || variantResult.data.color
     }
 
     return { success: true, data: serializedVariant }

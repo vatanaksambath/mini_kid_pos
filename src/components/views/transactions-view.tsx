@@ -36,6 +36,7 @@ export default function TransactionsView() {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const orders          = useAppStore(state => state.orders)
   const setOrders       = useAppStore(state => state.setOrders)
+  const currentView     = useAppStore(state => state.currentView)
   
   const [loading, setLoading]           = useState(orders.length === 0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -63,7 +64,7 @@ export default function TransactionsView() {
   const load = useCallback(async (silent = false) => {
     if (!silent && orders.length === 0) setLoading(true)
     const [ordersRes, tmplRes] = await Promise.all([
-      getOrders(500), // Increased limit for history but still capped
+      getOrders(500),
       getReceiptTemplate()
     ])
     if (ordersRes.success) setOrders(ordersRes.data || [])
@@ -74,11 +75,14 @@ export default function TransactionsView() {
     setLoading(false)
   }, [orders.length, setOrders])
 
-  useEffect(() => { 
-    load()
-    const timer = setInterval(() => load(true), 60000) // Lower frequency auto refresh (1 min)
-    return () => clearInterval(timer)
-  }, [load])
+  // Initial load
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Silent refresh every time the user navigates to this view
+  useEffect(() => {
+    if (currentView === 'transactions') load(true)
+  }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { setCurrentPage(1) }, [search, filterDateFrom, filterDateTo, filterPayment, filterCustomer])
 
   const uniqueCustomers = useMemo(() => 

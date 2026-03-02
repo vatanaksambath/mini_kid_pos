@@ -29,6 +29,7 @@ export default function DashboardView() {
   const setProducts    = useAppStore((state) => state.setProducts)
   const customers      = useAppStore((state) => state.customers)
   const setCustomers   = useAppStore((state) => state.setCustomers)
+  const currentView    = useAppStore((state) => state.currentView)
   
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(products.length === 0 || customers.length === 0)
@@ -85,7 +86,19 @@ export default function DashboardView() {
       setLoading(false)
     }
     loadStats()
-  }, [products.length, customers.length, setProducts, setCustomers])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Silent refresh every time user navigates to dashboard
+  useEffect(() => {
+    if (currentView === 'dashboard') {
+      async function refresh() {
+        const [productsRes, customersRes] = await Promise.all([getProducts(), getCustomers()])
+        if (productsRes.success) setProducts(productsRes.data || [])
+        if (customersRes.success) setCustomers(customersRes.data || [])
+      }
+      refresh()
+    }
+  }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const statCards = stats
     ? [

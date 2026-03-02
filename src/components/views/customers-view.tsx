@@ -30,7 +30,8 @@ import { useAppStore } from '@/store/use-app-store'
 export default function CustomersView() {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const customers       = useAppStore(state => state.customers)
-  const setCustomers     = useAppStore(state => state.setCustomers)
+  const setCustomers    = useAppStore(state => state.setCustomers)
+  const currentView     = useAppStore(state => state.currentView)
   
   const [socialTypes, setSocialTypes]   = useState<any[]>([])
   const [loading, setLoading]           = useState(customers.length === 0)
@@ -55,10 +56,16 @@ export default function CustomersView() {
     setLoading(false)
   }, [customers.length, setCustomers])
 
+  // Initial load
   useEffect(() => {
     loadCustomers()
     getSocialMediaTypes().then(res => { if (res.success) setSocialTypes(res.data || []) })
-  }, [loadCustomers])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Silent refresh every time the user navigates to this view
+  useEffect(() => {
+    if (currentView === 'customers') loadCustomers(true)
+  }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setCurrentPage(1) }, [search, filterSocial, filterPtsMin, filterPtsMax])
 

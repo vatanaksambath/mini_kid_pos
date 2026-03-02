@@ -39,6 +39,7 @@ export default function InventoryView() {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const products        = useAppStore(state => state.products)
   const setProducts     = useAppStore(state => state.setProducts)
+  const currentView     = useAppStore(state => state.currentView)
   
   const [categories, setCategories]     = useState<any[]>([])
   const [brands, setBrands]             = useState<any[]>([])
@@ -85,13 +86,18 @@ export default function InventoryView() {
     setLoading(false)
   }, [products.length, setProducts])
 
+  // Initial load
   useEffect(() => {
-    // Run ALL initial fetches in parallel — products, categories, brands at the same time
     Promise.all([loadProducts(), getCategories(), getBrands()]).then(([, catRes, brandRes]) => {
       if (catRes.success) setCategories(catRes.data || [])
       if (brandRes.success) setBrands(brandRes.data || [])
     })
-  }, [loadProducts])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Silent refresh every time user navigates to inventory view
+  useEffect(() => {
+    if (currentView === 'inventory') loadProducts(true)
+  }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setCurrentPage(1) }, [search, filterCategory, filterBrand, filterStockMin, filterStockMax, filterDateFrom, filterDateTo])
 

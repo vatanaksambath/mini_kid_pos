@@ -32,6 +32,7 @@ interface AppState {
   setCart: (cart: CartItem[]) => void
   addItemToCart: (item: CartItem) => void
   updateQuantity: (sku: string, delta: number) => void
+  setQuantityDirect: (sku: string, qty: number) => void
   removeItem: (sku: string) => void
   clearCart: () => void
 
@@ -74,6 +75,13 @@ export const useAppStore = create<AppState>((set) => ({
     cart: state.cart.map((item) =>
       item.sku === sku
         ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+        : item
+    )
+  })),
+  setQuantityDirect: (sku, qty) => set((state) => ({
+    cart: state.cart.map((item) =>
+      item.sku === sku
+        ? { ...item, quantity: Math.min(Math.max(1, qty), item.availableStock ?? qty) }
         : item
     )
   })),

@@ -22,8 +22,10 @@ export default function POSView() {
   const cart = useAppStore((state) => state.cart)
   const addItemToCart = useAppStore((state) => state.addItemToCart)
   const updateQuantity = useAppStore((state) => state.updateQuantity)
+  const setQuantityDirect = useAppStore((state) => state.setQuantityDirect)
   const removeItem = useAppStore((state) => state.removeItem)
   const clearCart = useAppStore((state) => state.clearCart)
+  const setProducts = useAppStore((state) => state.setProducts)
 
   const [manualSku, setManualSku] = useState('')
   const [isScanning, setIsScanning] = useState(false)
@@ -138,11 +140,26 @@ export default function POSView() {
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.sku, -1)}>
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              className="h-8 w-8" 
+                            <input
+                              type="number"
+                              min={1}
+                              max={item.availableStock}
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 1
+                                if (item.availableStock !== undefined && val > item.availableStock) {
+                                  showGlobalAlert('warning', 'Stock Limit', `Only ${item.availableStock} in stock.`)
+                                  setQuantityDirect(item.sku, item.availableStock)
+                                } else {
+                                  setQuantityDirect(item.sku, val)
+                                }
+                              }}
+                              className="w-12 h-8 text-center text-sm font-bold rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => {
                                 if (item.availableStock !== undefined && item.quantity >= item.availableStock) {
                                   showGlobalAlert('warning', 'Stock Limit', `Cannot add more. Only ${item.availableStock} in stock.`)
@@ -199,15 +216,30 @@ export default function POSView() {
                         <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-500/10 hover:text-red-600 rounded-full" onClick={() => removeItem(item.sku)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                        <div className="flex items-center space-x-3 bg-muted/30 rounded-full p-0.5 border">
+                        <div className="flex items-center space-x-2 bg-muted/30 rounded-full p-0.5 border">
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => updateQuantity(item.sku, -1)}>
                             <Minus className="h-4 w-4" />
                           </Button>
-                          <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 rounded-full" 
+                          <input
+                            type="number"
+                            min={1}
+                            max={item.availableStock}
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 1
+                              if (item.availableStock !== undefined && val > item.availableStock) {
+                                showGlobalAlert('warning', 'Stock Limit', `Only ${item.availableStock} in stock.`)
+                                setQuantityDirect(item.sku, item.availableStock)
+                              } else {
+                                setQuantityDirect(item.sku, val)
+                              }
+                            }}
+                            className="w-10 h-8 text-center text-sm font-bold bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
                             onClick={() => {
                               if (item.availableStock !== undefined && item.quantity >= item.availableStock) {
                                 showGlobalAlert('warning', 'Stock Limit', `Cannot add more.`)
@@ -282,7 +314,7 @@ export default function POSView() {
                     name: i.name,
                     sku: i.sku
                   }))}
-                  onSuccess={() => clearCart()}
+                  onSuccess={() => { clearCart(); setProducts([]) }}
                 />
               </CardContent>
             </Card>
