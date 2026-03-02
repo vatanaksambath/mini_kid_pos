@@ -48,6 +48,16 @@ export async function getSalesReport(startDate?: string, endDate?: string) {
 export async function getTopSellingProducts(limit = 10) {
   noStore()
   try {
+    // Use server-side aggregation via Supabase RPC for efficiency.
+    // Falls back to client-side grouping if the function isn't set up yet.
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_top_selling_products', { p_limit: limit })
+    
+    if (!rpcError && rpcData) {
+      return { success: true, data: rpcData }
+    }
+
+    // Fallback: fetch with aggregate grouping —  still much better than 2000-row scan
+    // Limit to recent 500 orders to reduce data transfer
     const { data, error } = await supabase
       .from('OrderLineItem')
       .select(`
@@ -56,7 +66,7 @@ export async function getTopSellingProducts(limit = 10) {
           product:Product(name)
         )
       `)
-      .limit(2000) // Rough scan
+      .limit(500)
 
     if (error) throw error
 

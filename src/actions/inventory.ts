@@ -5,9 +5,9 @@ import { revalidatePath } from 'next/cache'
 
 export async function getProducts() {
   try {
-    const { data: products, error } = await supabase
-      .from('Product')
-      .select(`
+    // Fetch products and colors IN PARALLEL — eliminates one sequential roundtrip
+    const [productsResult, colorsResult] = await Promise.all([
+      supabase.from('Product').select(`
         *,
         variants:ProductVariant(
           *,
@@ -17,17 +17,15 @@ export async function getProducts() {
         category:Category(*),
         brand:Brand(*),
         source:ProductSource(*)
-      `)
-      .order('updatedAt', { ascending: false })
+      `).order('updatedAt', { ascending: false }),
+      supabase.from('Color').select('*')
+    ])
 
-    if (error) throw error
+    if (productsResult.error) throw productsResult.error
 
-    // Fetch all colors to map hex to name
-    const { data: colors } = await supabase.from('Color').select('*')
-    const colorMap = new Map(colors?.map(c => [c.hex.toLowerCase(), c.name]) || [])
+    const colorMap = new Map(colorsResult.data?.map(c => [c.hex.toLowerCase(), c.name]) || [])
 
-    // Convert string decimals to numbers for serialization if necessary
-    const serializedProducts = (products || []).map((product: any) => ({
+    const serializedProducts = (productsResult.data || []).map((product: any) => ({
       ...product,
       variants: (product.variants || []).map((variant: any) => ({
         ...variant,
@@ -40,18 +38,18 @@ export async function getProducts() {
     return { success: true, data: serializedProducts }
   } catch (error: any) {
     console.error('Error fetching products:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to fetch products' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch products'
     }
   }
 }
 
 export async function getProductById(id: string) {
   try {
-    const { data: product, error } = await supabase
-      .from('Product')
-      .select(`
+    // Fetch product and colors IN PARALLEL
+    const [productResult, colorsResult] = await Promise.all([
+      supabase.from('Product').select(`
         *,
         category:Category(*),
         brand:Brand(*),
@@ -64,19 +62,17 @@ export async function getProductById(id: string) {
           )
         ),
         source:ProductSource(*)
-      `)
-      .eq('id', id)
-      .single()
+      `).eq('id', id).single(),
+      supabase.from('Color').select('*')
+    ])
 
-    if (error || !product) return { success: false, error: 'Product not found' }
+    if (productResult.error || !productResult.data) return { success: false, error: 'Product not found' }
 
-    // Fetch all colors to map hex to name
-    const { data: colors } = await supabase.from('Color').select('*')
-    const colorMap = new Map(colors?.map(c => [c.hex.toLowerCase(), c.name]) || [])
+    const colorMap = new Map(colorsResult.data?.map(c => [c.hex.toLowerCase(), c.name]) || [])
 
     const serializedProduct = {
-      ...product,
-      variants: (product.variants || []).map((variant: any) => ({
+      ...productResult.data,
+      variants: (productResult.data.variants || []).map((variant: any) => ({
         ...variant,
         colorName: colorMap.get(variant.color?.toLowerCase()) || variant.color
       }))
@@ -108,10 +104,9 @@ export async function createProduct(data: {
   }[]
 }) {
   try {
-    // 1. Create the base product
-    const { data: newProduct, error: productError } = await supabase
-      .from('Product')
-      .insert({
+    // 1. Create the base product and get/create the default location IN PARALLEL
+    const [productResult, locationResult] = await Promise.all([
+      supabase.from('Product').insert({
         name: data.name,
         description: data.description || null,
         categoryId: data.categoryId || null,
@@ -119,58 +114,48 @@ export async function createProduct(data: {
         sourceId: data.sourceId || null,
         imageUrl: data.imageUrl || null,
         stockDate: data.stockDate || null,
-      })
-      .select()
-      .single()
+      }).select().single(),
+      supabase.from('StoreLocation').select('*').eq('name', 'Main Store').single()
+    ])
 
-    if (productError || !newProduct) throw productError
+    if (productResult.error || !productResult.data) throw productResult.error
+    const newProduct = productResult.data
 
-    // 2. Default Location
-    let { data: defaultLocation } = await supabase
-      .from('StoreLocation')
-      .select('*')
-      .eq('name', 'Main Store')
-      .single()
-
+    let defaultLocation = locationResult.data
     if (!defaultLocation) {
       const { data: loc } = await supabase
         .from('StoreLocation')
         .insert({ name: 'Main Store', address: 'Default Address' })
-        .select()
-        .single()
+        .select().single()
       defaultLocation = loc
     }
 
-    // 3. Create variants and initial inventory
-    for (let variant of data.variants) {
-      let sku = variant.sku?.trim()
-      if (!sku) {
-        const { count } = await supabase.from('ProductVariant').select('*', { count: 'exact', head: true })
-        sku = `SKU-${String((count || 0) + 1).padStart(5, '0')}`
-      }
+    // 2. Batch INSERT all variants in a single query (no loop)
+    const variantsToInsert = data.variants.map(variant => ({
+      productId: newProduct.id,
+      sku: variant.sku?.trim() || `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
+      sizeId: variant.sizeId || null,
+      color: variant.color || null,
+      priceOverride: variant.priceOverride || null,
+      basePrice: variant.basePrice,
+      costPrice: variant.costPrice || 0,
+    }))
 
-      const { data: newVariant, error: varError } = await supabase
-        .from('ProductVariant')
-        .insert({
-          productId: newProduct.id,
-          sku,
-          sizeId: variant.sizeId || null,
-          color: variant.color || null,
-          priceOverride: variant.priceOverride || null,
-          basePrice: variant.basePrice,
-          costPrice: variant.costPrice || 0,
-        })
-        .select()
-        .single()
+    const { data: newVariants, error: varError } = await supabase
+      .from('ProductVariant')
+      .insert(variantsToInsert)
+      .select()
 
-      if (varError || !newVariant) throw varError
+    if (varError || !newVariants) throw varError
 
-      await supabase.from('InventoryLevel').insert({
-        variantId: newVariant.id,
-        locationId: defaultLocation.id,
-        quantity: variant.quantity,
-      })
-    }
+    // 3. Batch INSERT all InventoryLevels in a single query
+    const inventoryToInsert = newVariants.map((v, idx) => ({
+      variantId: v.id,
+      locationId: defaultLocation!.id,
+      quantity: data.variants[idx].quantity,
+    }))
+
+    await supabase.from('InventoryLevel').insert(inventoryToInsert)
 
     revalidatePath('/')
     return { success: true, data: newProduct }
@@ -182,7 +167,7 @@ export async function createProduct(data: {
 
 export async function deleteProduct(id: string) {
   try {
-    // 1. Get variant IDs
+    // Get variant IDs and delete everything in parallel chains
     const { data: variants } = await supabase
       .from('ProductVariant')
       .select('id')
@@ -190,13 +175,12 @@ export async function deleteProduct(id: string) {
 
     const variantIds = variants ? variants.map(v => v.id) : []
 
-    // 2. Delete Inventory Levels and Variants
     if (variantIds.length > 0) {
+      // Delete inventory levels first (FK constraint)
       await supabase.from('InventoryLevel').delete().in('variantId', variantIds)
-      await supabase.from('ProductVariant').delete().in('id', variantIds) // Also can delete by productId directly
+      await supabase.from('ProductVariant').delete().in('id', variantIds)
     }
 
-    // 3. Delete Product
     const { error } = await supabase.from('Product').delete().eq('id', id)
     if (error) throw error
 
@@ -228,10 +212,9 @@ export async function updateProduct(id: string, data: {
   }[]
 }) {
   try {
-    // 1. Update the base product
-    const { data: product, error: productError } = await supabase
-      .from('Product')
-      .update({
+    // 1. Run product update + get existing variants + get location ALL IN PARALLEL
+    const [productResult, existingVariantsResult, locationResult] = await Promise.all([
+      supabase.from('Product').update({
         name: data.name,
         description: data.description || null,
         categoryId: data.categoryId || null,
@@ -239,107 +222,93 @@ export async function updateProduct(id: string, data: {
         sourceId: data.sourceId || null,
         imageUrl: data.imageUrl || null,
         stockDate: data.stockDate || null,
-      })
-      .eq('id', id)
-      .select()
-      .single()
+      }).eq('id', id).select().single(),
+      supabase.from('ProductVariant').select('id').eq('productId', id),
+      supabase.from('StoreLocation').select('*').eq('name', 'Main Store').single()
+    ])
 
-    if (productError || !product) throw productError
+    if (productResult.error || !productResult.data) throw productResult.error
+    const product = productResult.data
 
-    // 2. Handle Variants (Syncing)
-    const { data: existingVariants } = await supabase
-      .from('ProductVariant')
-      .select('id')
-      .eq('productId', id)
-
-    const existingVariantIds = existingVariants ? existingVariants.map(v => v.id) : []
-    const incomingVariantIds = data.variants.map(v => v.id).filter(Boolean) as string[]
-
-    // Delete removed variants
-    const toDelete = existingVariantIds.filter(vId => !incomingVariantIds.includes(vId))
-    if (toDelete.length > 0) {
-      await supabase.from('InventoryLevel').delete().in('variantId', toDelete)
-      await supabase.from('ProductVariant').delete().in('id', toDelete)
-    }
-
-    // Load Default Store Location
-    let { data: defaultLocation } = await supabase
-      .from('StoreLocation')
-      .select('*')
-      .eq('name', 'Main Store')
-      .single()
-
+    let defaultLocation = locationResult.data
     if (!defaultLocation) {
       const { data: loc } = await supabase
         .from('StoreLocation')
         .insert({ name: 'Main Store', address: 'Default Address' })
-        .select()
-        .single()
+        .select().single()
       defaultLocation = loc
     }
 
-    for (const v of data.variants) {
-      if (v.id) {
-        // Update existing variant
-        await supabase
-          .from('ProductVariant')
-          .update({
-            sku: v.sku?.trim() || `SKU-${Math.random().toString(36).substring(2, 9).toUpperCase()}`, // Fallback if somehow missing
-            sizeId: v.sizeId || null,
-            color: v.color || null,
-            priceOverride: v.priceOverride || null,
-            basePrice: v.basePrice,
-            costPrice: v.costPrice || 0,
-          })
-          .eq('id', v.id)
+    const existingVariantIds = existingVariantsResult.data?.map(v => v.id) || []
+    const incomingVariantIds = data.variants.map(v => v.id).filter(Boolean) as string[]
 
-        // Update quantity
-        const { data: inv } = await supabase
-          .from('InventoryLevel')
-          .select('id')
-          .eq('variantId', v.id)
-          .eq('locationId', defaultLocation.id)
-          .single()
+    // 2. Delete removed variants (batch)
+    const toDelete = existingVariantIds.filter(vId => !incomingVariantIds.includes(vId))
+    if (toDelete.length > 0) {
+      await Promise.all([
+        supabase.from('InventoryLevel').delete().in('variantId', toDelete),
+        // Wait for inventory deletion before variant deletion due to FK
+      ])
+      await supabase.from('ProductVariant').delete().in('id', toDelete)
+    }
 
-        if (inv) {
-          await supabase.from('InventoryLevel').update({ quantity: v.quantity }).eq('id', inv.id)
-        } else {
-          await supabase.from('InventoryLevel').insert({
-            variantId: v.id,
-            locationId: defaultLocation.id,
-            quantity: v.quantity
-          })
-        }
-      } else {
-        // Create new variant
-        let sku = v.sku?.trim()
-        if (!sku) {
-          const { count } = await supabase.from('ProductVariant').select('*', { count: 'exact', head: true })
-          sku = `SKU-${String((count || 0) + 1).padStart(5, '0')}`
-        }
+    const variantsToUpdate = data.variants.filter(v => v.id)
+    const variantsToCreate = data.variants.filter(v => !v.id)
 
-        const { data: newVariant, error: varError } = await supabase
-          .from('ProductVariant')
-          .insert({
-            productId: id,
-            sku,
-            sizeId: v.sizeId || null,
-            color: v.color || null,
-            priceOverride: v.priceOverride || null,
-            basePrice: v.basePrice,
-            costPrice: v.costPrice || 0,
-          })
-          .select()
-          .single()
+    // 3. Run all variant UPDATES in parallel (instead of sequential loop)
+    const updatePromises = variantsToUpdate.map(v =>
+      supabase.from('ProductVariant').update({
+        sku: v.sku?.trim() || `SKU-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+        sizeId: v.sizeId || null,
+        color: v.color || null,
+        priceOverride: v.priceOverride || null,
+        basePrice: v.basePrice,
+        costPrice: v.costPrice || 0,
+      }).eq('id', v.id!)
+    )
 
-        if (varError || !newVariant) throw varError
+    // 4. Use UPSERT for inventory levels — eliminates the SELECT then INSERT/UPDATE pattern
+    const inventoryUpserts = variantsToUpdate.map(v => ({
+      variantId: v.id!,
+      locationId: defaultLocation!.id,
+      quantity: v.quantity,
+    }))
 
-        await supabase.from('InventoryLevel').insert({
-          variantId: newVariant.id,
-          locationId: defaultLocation.id,
-          quantity: v.quantity
-        })
-      }
+    // Run variant updates and inventory upserts in parallel
+    await Promise.all([
+      ...updatePromises,
+      inventoryUpserts.length > 0
+        ? supabase.from('InventoryLevel')
+            .upsert(inventoryUpserts, { onConflict: 'variantId,locationId' })
+        : Promise.resolve()
+    ])
+
+    // 5. Batch INSERT new variants (single query)
+    if (variantsToCreate.length > 0) {
+      const newVariantsPayload = variantsToCreate.map(v => ({
+        productId: id,
+        sku: v.sku?.trim() || `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
+        sizeId: v.sizeId || null,
+        color: v.color || null,
+        priceOverride: v.priceOverride || null,
+        basePrice: v.basePrice,
+        costPrice: v.costPrice || 0,
+      }))
+
+      const { data: newVariants, error: varError } = await supabase
+        .from('ProductVariant')
+        .insert(newVariantsPayload)
+        .select()
+
+      if (varError || !newVariants) throw varError
+
+      const newInventory = newVariants.map((v, idx) => ({
+        variantId: v.id,
+        locationId: defaultLocation!.id,
+        quantity: variantsToCreate[idx].quantity,
+      }))
+
+      await supabase.from('InventoryLevel').insert(newInventory)
     }
 
     revalidatePath('/')
@@ -369,13 +338,13 @@ export async function generateUniqueSku() {
     let finalSku = ''
     while (!unique) {
       finalSku = `SKU-${Math.floor(100000 + Math.random() * 900000)}`
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('ProductVariant')
         .select('id')
         .eq('sku', finalSku)
         .single()
       
-      if (!data) unique = true // No row found, SKU is unique
+      if (!data) unique = true
     }
     return { success: true, sku: finalSku }
   } catch (error) {
@@ -383,3 +352,4 @@ export async function generateUniqueSku() {
     return { success: false, error: 'Failed to generate unique SKU' }
   }
 }
+

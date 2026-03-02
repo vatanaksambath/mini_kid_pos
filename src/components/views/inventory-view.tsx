@@ -86,8 +86,8 @@ export default function InventoryView() {
   }, [products.length, setProducts])
 
   useEffect(() => {
-    loadProducts()
-    Promise.all([getCategories(), getBrands()]).then(([catRes, brandRes]) => {
+    // Run ALL initial fetches in parallel — products, categories, brands at the same time
+    Promise.all([loadProducts(), getCategories(), getBrands()]).then(([, catRes, brandRes]) => {
       if (catRes.success) setCategories(catRes.data || [])
       if (brandRes.success) setBrands(brandRes.data || [])
     })

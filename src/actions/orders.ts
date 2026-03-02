@@ -94,26 +94,36 @@ export async function createOrder(data: {
       if (paymentsError) throw paymentsError
     }
 
-    // 2. Update Inventory Levels manually
-    for (const item of data.items) {
-      const { data: inventory } = await supabase
-        .from('InventoryLevel')
-        .select('*')
-        .eq('variantId', item.variantId)
-        .eq('locationId', data.locationId)
-        .single()
+    // 2. Batch fetch ALL inventory levels for this order at once (single query)
+    const variantIds = data.items.map(i => i.variantId)
+    const { data: inventoryLevels } = await supabase
+      .from('InventoryLevel')
+      .select('*')
+      .in('variantId', variantIds)
+      .eq('locationId', data.locationId)
 
+    // Validate all stock levels before making any changes
+    for (const item of data.items) {
+      const inventory = inventoryLevels?.find(
+        inv => inv.variantId === item.variantId && inv.locationId === data.locationId
+      )
       if (!inventory || inventory.quantity < item.quantity) {
         throw new Error(`Insufficient stock for variant ${item.variantId}`)
       }
-
-      const { error: invError } = await supabase
-        .from('InventoryLevel')
-        .update({ quantity: inventory.quantity - item.quantity })
-        .eq('id', inventory.id)
-
-      if (invError) throw invError
     }
+
+    // Deduct inventory in PARALLEL (instead of sequential loop)
+    await Promise.all(
+      data.items.map(item => {
+        const inventory = inventoryLevels!.find(
+          inv => inv.variantId === item.variantId && inv.locationId === data.locationId
+        )!
+        return supabase
+          .from('InventoryLevel')
+          .update({ quantity: inventory.quantity - item.quantity })
+          .eq('id', inventory.id)
+      })
+    )
 
     // 3. Update Loyalty Points if customer exists
     if (data.customerId) {
