@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Package, ShoppingCart, Users, DollarSign, TrendingUp,
-  ArrowUpRight, ArrowDownRight, Loader2,
+  ArrowUpRight, ArrowDownRight, Loader2, Banknote,
 } from "lucide-react"
 import { useAppStore } from "@/store/use-app-store"
 import { useEffect, useState } from "react"
@@ -19,6 +19,7 @@ interface Stats {
   totalProducts: number
   totalCustomers: number
   totalStock: number
+  totalCostPrice: number
   recentOrders: any[]
   topProducts: any[]
 }
@@ -59,6 +60,13 @@ export default function DashboardView() {
           acc + p.variants.reduce((a2: number, v: any) =>
             a2 + (v.inventory?.reduce((a3: number, i: any) => a3 + i.quantity, 0) || 0), 0), 0)
 
+        // Total cost = costPrice × quantity for each variant at each inventory location
+        const totalCostPrice = productsData.reduce((acc: number, p: any) =>
+          acc + p.variants.reduce((a2: number, v: any) => {
+            const qty = v.inventory?.reduce((a3: number, i: any) => a3 + i.quantity, 0) || 0
+            return a2 + (Number(v.costPrice) || 0) * qty
+          }, 0), 0)
+
         const totalRevenue = ordersData.reduce((s: number, o: any) => s + Number(o.totalAmount), 0)
 
         // Top 5 products by stock
@@ -77,6 +85,7 @@ export default function DashboardView() {
           totalProducts: productsData.length,
           totalCustomers: customersData.length,
           totalStock,
+          totalCostPrice,
           recentOrders: ordersData,
           topProducts,
         })
@@ -110,6 +119,14 @@ export default function DashboardView() {
           bg: 'bg-emerald-500/10',
         },
         {
+          label: 'Total Cost Price',
+          value: `$${stats.totalCostPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          sub: 'Sum of cost × stock qty',
+          icon: Banknote,
+          color: 'text-rose-500',
+          bg: 'bg-rose-500/10',
+        },
+        {
           label: 'Orders',
           value: stats.totalOrders.toLocaleString(),
           icon: ShoppingCart,
@@ -123,13 +140,6 @@ export default function DashboardView() {
           icon: Package,
           color: 'text-orange-500',
           bg: 'bg-orange-500/10',
-        },
-        {
-          label: 'Customers',
-          value: stats.totalCustomers.toLocaleString(),
-          icon: Users,
-          color: 'text-purple-500',
-          bg: 'bg-purple-500/10',
         },
       ]
     : []
