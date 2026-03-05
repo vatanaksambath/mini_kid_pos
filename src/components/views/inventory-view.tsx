@@ -122,9 +122,11 @@ export default function InventoryView() {
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Silent refresh every time user navigates to inventory view
+  // Silent refresh — debounced 400ms so fast navigation doesn't trigger stacked requests
   useEffect(() => {
-    if (currentView === 'inventory') loadProducts(true)
+    if (currentView !== 'inventory') return
+    const t = setTimeout(() => loadProducts(true), 400)
+    return () => clearTimeout(t)
   }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setCurrentPage(1) }, [search, filterCategory, filterBrand, filterStockMin, filterStockMax, filterDateFrom, filterDateTo])
@@ -174,7 +176,7 @@ export default function InventoryView() {
   if (error) return <div className="p-8 text-red-500">{error}</div>
 
   return (
-    <div className="flex flex-col gap-6 p-4 lg:p-8 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 p-4 lg:p-8 animate-in fade-in duration-150">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

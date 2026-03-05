@@ -78,9 +78,11 @@ export default function TransactionsView() {
   // Initial load
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Silent refresh every time the user navigates to this view
+  // Silent refresh — debounced 400ms
   useEffect(() => {
-    if (currentView === 'transactions') load(true)
+    if (currentView !== 'transactions') return
+    const t = setTimeout(() => load(true), 400)
+    return () => clearTimeout(t)
   }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setCurrentPage(1) }, [search, filterDateFrom, filterDateTo, filterPayment, filterCustomer])
@@ -142,7 +144,7 @@ export default function TransactionsView() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 lg:p-8 pt-6 animate-in fade-in duration-500">
+    <div className="flex-1 space-y-4 p-4 lg:p-8 pt-6 animate-in fade-in duration-150">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-primary flex items-center gap-2">

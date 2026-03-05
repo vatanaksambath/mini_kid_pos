@@ -45,9 +45,11 @@ export default function ReportsView() {
   // Reload when date filters change
   useEffect(() => { loadData() }, [dateFrom, dateTo]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Silent refresh every time user navigates to reports view
+  // Silent refresh — debounced 400ms
   useEffect(() => {
-    if (currentView === 'reports') loadData()
+    if (currentView !== 'reports') return
+    const t = setTimeout(() => loadData(), 400)
+    return () => clearTimeout(t)
   }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculations
@@ -85,7 +87,7 @@ export default function ReportsView() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-4 lg:p-8 pt-6 animate-in fade-in duration-500">
+    <div className="flex-1 space-y-6 p-4 lg:p-8 pt-6 animate-in fade-in duration-150">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-primary flex items-center gap-2">

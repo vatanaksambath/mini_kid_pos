@@ -18,7 +18,7 @@ export default function AppPage() {
       <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'dashboard' && "hidden")}>
         <DashboardView />
       </div>
-      <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'pos' && "hidden")}>
+      <div className={cn("absolute inset-0 overflow-hidden", currentView !== 'pos' && "hidden")}>
         <POSView />
       </div>
       <div className={cn("absolute inset-0 overflow-y-auto", currentView !== 'inventory' && "hidden")}>

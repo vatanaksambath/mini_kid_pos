@@ -97,16 +97,15 @@ export default function DashboardView() {
     loadStats()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Silent refresh every time user navigates to dashboard
+  // Silent refresh — debounced 400ms
   useEffect(() => {
-    if (currentView === 'dashboard') {
-      async function refresh() {
-        const [productsRes, customersRes] = await Promise.all([getProducts(), getCustomers()])
-        if (productsRes.success) setProducts(productsRes.data || [])
-        if (customersRes.success) setCustomers(customersRes.data || [])
-      }
-      refresh()
-    }
+    if (currentView !== 'dashboard') return
+    const t = setTimeout(async () => {
+      const [productsRes, customersRes] = await Promise.all([getProducts(), getCustomers()])
+      if (productsRes.success) setProducts(productsRes.data || [])
+      if (customersRes.success) setCustomers(customersRes.data || [])
+    }, 400)
+    return () => clearTimeout(t)
   }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const statCards = stats
@@ -145,7 +144,7 @@ export default function DashboardView() {
     : []
 
   return (
-    <div className="flex flex-col gap-6 lg:gap-8 p-4 lg:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-6 lg:gap-8 p-4 lg:p-8 animate-in fade-in duration-150">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

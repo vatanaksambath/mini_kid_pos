@@ -62,9 +62,11 @@ export default function CustomersView() {
     getSocialMediaTypes().then(res => { if (res.success) setSocialTypes(res.data || []) })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Silent refresh every time the user navigates to this view
+  // Silent refresh — debounced 400ms
   useEffect(() => {
-    if (currentView === 'customers') loadCustomers(true)
+    if (currentView !== 'customers') return
+    const t = setTimeout(() => loadCustomers(true), 400)
+    return () => clearTimeout(t)
   }, [currentView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setCurrentPage(1) }, [search, filterSocial, filterPtsMin, filterPtsMax])
@@ -95,7 +97,7 @@ export default function CustomersView() {
   const paginatedCustomers = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   return (
-    <div className="flex-1 space-y-4 p-4 lg:p-8 pt-6 animate-in fade-in duration-500">
+    <div className="flex-1 space-y-4 p-4 lg:p-8 pt-6 animate-in fade-in duration-150">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

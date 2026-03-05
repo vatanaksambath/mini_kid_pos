@@ -83,8 +83,8 @@ export default function POSView() {
   }, [handleAddItem])
 
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-8 min-h-screen animate-in fade-in duration-500 pb-52 lg:pb-8">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full overflow-hidden p-4 lg:p-8 gap-4 animate-in fade-in duration-150">
+      <div className="flex items-center justify-between shrink-0">
         <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">POS</h2>
         <div className="flex items-center space-x-2">
           <Button variant={isScanning ? "destructive" : "default"} onClick={() => setIsScanning(!isScanning)} size="sm" className="h-10 sm:h-9">
@@ -95,15 +95,15 @@ export default function POSView() {
         </div>
       </div>
 
-      <div className="grid flex-1 gap-6 grid-cols-1 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
-          <Card className="flex flex-col h-full min-h-[400px] glass-card">
-            <CardHeader className="p-4 border-b border-border/50">
+      <div className="grid flex-1 min-h-0 gap-6 grid-cols-1 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4 order-2 lg:order-1 flex flex-col min-h-0">
+          <Card className="flex flex-col flex-1 min-h-0 glass-card">
+            <CardHeader className="p-4 border-b border-border/50 shrink-0">
               <CardTitle className="flex items-center text-lg">
                 <ShoppingCart className="mr-2 h-5 w-5" /> Current Sale
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 overflow-auto p-0 pb-20 lg:pb-0">
+            <CardContent className="flex-1 min-h-0 overflow-auto p-0 pb-20 lg:pb-0">
               {/* Desktop Table */}
               <Table className="hidden md:table">
                 <TableHeader>
@@ -260,7 +260,7 @@ export default function POSView() {
           </Card>
         </div>
 
-        <div className="space-y-4 order-1 lg:order-2">
+        <div className="flex flex-col min-h-0 overflow-auto space-y-4 order-1 lg:order-2">
           {isScanning && (
             <Card className="glass-card border-primary/50 overflow-hidden">
               <CardHeader className="p-4 bg-primary/5">

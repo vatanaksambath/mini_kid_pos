@@ -99,7 +99,7 @@ export default function SettingsView() {
   const refreshActiveTab = () => loadTabData(activeTab)
 
   return (
-    <div className="flex-1 space-y-6 p-4 lg:p-8 pt-6 animate-in fade-in duration-500">
+    <div className="flex-1 space-y-6 p-4 lg:p-8 pt-6 animate-in fade-in duration-150">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex flex-col space-y-1">
