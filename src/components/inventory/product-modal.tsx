@@ -49,6 +49,7 @@ interface Variant {
 
 interface ProductModalProps {
   product?: any
+  cloneData?: any          // pre-fills form like edit but as a NEW product (no id, no image, fresh SKUs)
   open?: boolean
   onOpenChange?: (open: boolean) => void
   trigger?: React.ReactNode
@@ -61,7 +62,7 @@ interface ProductImage {
   file?: File
 }
 
-export default function ProductModal({ product, open: externalOpen, onOpenChange, trigger, onSuccess }: ProductModalProps) {
+export default function ProductModal({ product, cloneData, open: externalOpen, onOpenChange, trigger, onSuccess }: ProductModalProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [internalOpen, setInternalOpen] = useState(false)
@@ -94,7 +95,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
 
   // Variants State
   const [variants, setVariants] = useState<Variant[]>([
-    { sku: '', sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' },
+    { sku: '', sizeId: '', color: '', priceOverride: '', basePrice: '', costPrice: '', quantity: '' },
   ])
 
   useEffect(() => {
@@ -126,21 +127,50 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
         id: v.id,
         sku: v.sku,
         sizeId: v.sizeId || '',
-        color: v.color || '#000000',
+        color: v.color || '',
         priceOverride: v.priceOverride?.toString() || '',
         basePrice: v.basePrice?.toString() || '',
         costPrice: v.costPrice?.toString() || '',
         quantity: v.inventory?.reduce((acc: number, curr: any) => acc + curr.quantity, 0).toString() || '0',
       })))
+    } else if (cloneData && open) {
+      // Pre-fill from cloneData but strip image and SKUs — create as new product
+      setName(cloneData.name || '')
+      setDescription(cloneData.description || '')
+      setStockDate(cloneData.stockDate ? new Date(cloneData.stockDate).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA'))
+      setCategoryId(cloneData.categoryId || '')
+      setBrandId(cloneData.brandId || '')
+      setSourceId(cloneData.sourceId || '')
+      setImages([]) // No image cloning
+
+      // Generate fresh SKUs for each variant, keep all other variant data
+      const generateSkus = async () => {
+        const clonedVariants = await Promise.all(
+          (cloneData.variants || []).map(async (v: any) => {
+            const skuRes = await generateUniqueSku()
+            return {
+              sku: skuRes.success ? (skuRes.sku ?? '') : '',
+              sizeId: v.sizeId || '',
+              color: v.color || '',
+              priceOverride: v.priceOverride?.toString() || '',
+              basePrice: v.basePrice?.toString() || '',
+              costPrice: v.costPrice?.toString() || '',
+              quantity: v.inventory?.reduce((acc: number, curr: any) => acc + curr.quantity, 0).toString() || '0',
+            }
+          })
+        )
+        setVariants(clonedVariants.length > 0 ? clonedVariants : [{ sku: '', sizeId: '', color: '', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
+      }
+      generateSkus()
     } else if (open) {
       resetForm()
       generateUniqueSku().then(res => {
         if (res.success && res.sku) {
-          setVariants([{ sku: res.sku, sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
+          setVariants([{ sku: res.sku, sizeId: '', color: '', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
         }
       })
     }
-  }, [product, open])
+  }, [product, cloneData, open])
 
   useEffect(() => {
     if (open) {
@@ -184,7 +214,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
   const addVariant = async () => {
     const res = await generateUniqueSku()
     const newSku = res.success && res.sku ? res.sku : `SKU-${Math.floor(100000 + Math.random() * 900000)}`
-    setVariants([...variants, { sku: newSku, sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
+    setVariants([...variants, { sku: newSku, sizeId: '', color: '', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
   }
 
   // Auto-scroll variant table to bottom when a new row is added
@@ -350,23 +380,24 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
     setSourceId('')
     images.forEach(img => { if (img.type === 'new') URL.revokeObjectURL(img.url) })
     setImages([])
-    setVariants([{ sku: '', sizeId: '', color: '#000000', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
+    setVariants([{ sku: '', sizeId: '', color: '', priceOverride: '', basePrice: '', costPrice: '', quantity: '' }])
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger ? (
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-      ) : (
+      ) : externalOpen === undefined ? (
+        // Only show the default "Add Product" button when NOT externally controlled
         <DialogTrigger asChild>
           <Button>
             <Plus className="mr-2 h-4 w-4" /> Add Product
           </Button>
         </DialogTrigger>
-      )}
+      ) : null}
       <DialogContent className="sm:max-w-4xl w-full h-[100dvh] sm:h-auto sm:max-h-[95vh] rounded-none sm:rounded-lg p-0 sm:p-6 flex flex-col overflow-hidden">
         <DialogHeader className="p-4 sm:p-0 border-b sm:border-none shrink-0 relative pr-10">
-          <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+          <DialogTitle>{product ? 'Edit Product' : cloneData ? 'Clone Product' : 'Add New Product'}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-4 sm:px-0 pb-36 sm:pb-0">
           <form onSubmit={handleSubmit} className="space-y-6 pt-4 sm:pt-0">
@@ -547,7 +578,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                       </TableCell>
                       <TableCell className="p-2 sm:p-4">
                         {colors.length > 0 ? (
-                          <Select value={v.color} onValueChange={(val) => updateVariant(i, 'color', val)}>
+                          <Select value={v.color || 'none'} onValueChange={(val) => updateVariant(i, 'color', val === 'none' ? '' : val)}>
                             <SelectTrigger className="h-8 w-32 text-xs">
                               <div className="flex flex-1 items-center gap-2 min-w-0 pr-1">
                                 <SelectValue placeholder="Color" />
@@ -636,7 +667,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                     <div>
                       <Label className="text-xs text-muted-foreground mb-1 block">Color</Label>
                       {colors.length > 0 ? (
-                          <Select value={v.color} onValueChange={(val) => updateVariant(i, 'color', val)}>
+                          <Select value={v.color || 'none'} onValueChange={(val) => updateVariant(i, 'color', val === 'none' ? '' : val)}>
                             <SelectTrigger className="h-10 text-sm">
                               <SelectValue placeholder="Color" />
                             </SelectTrigger>
@@ -656,7 +687,7 @@ export default function ProductModal({ product, open: externalOpen, onOpenChange
                           <div className="flex items-center gap-2 h-10 px-3 border rounded-md">
                             <div className="w-5 h-5 rounded-full border shadow-sm shrink-0" style={{ backgroundColor: v.color }} />
                             <input type="color" value={v.color} onChange={(e) => updateVariant(i, 'color', e.target.value)} className="w-full h-8 opacity-0 absolute cursor-pointer" />
-                            <span className="text-sm truncate uppercase">{v.color || 'Pick color'}</span>
+                            <span className="text-sm truncate uppercase">{v.color || 'None'}</span>
                           </div>
                         )}
                     </div>

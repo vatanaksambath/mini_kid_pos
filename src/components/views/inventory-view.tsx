@@ -10,7 +10,7 @@ import {
 import ProductModal from '@/components/inventory/product-modal'
 import PrintLabelsModal from '@/components/inventory/print-labels-modal'
 import { useEffect, useState, useCallback } from 'react'
-import { Package, Search, Edit, Trash2, RefreshCw, QrCode, Settings2, Eye, ChevronDown, X, Download } from 'lucide-react'
+import { Package, Search, Edit, Trash2, RefreshCw, QrCode, Settings2, Eye, ChevronDown, X, Download, Copy } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,6 +35,33 @@ import {
   Dialog, DialogContent, DialogTitle, DialogHeader,
 } from '@/components/ui/dialog'
 
+
+// Fades each image in individually on load — prevents batch repaint lag from simultaneous base64 decodes
+function FadeImage({ src, alt, className, width, height, onClick }: {
+  src: string; alt: string; className?: string;
+  width?: number; height?: number; onClick?: () => void
+}) {
+  const [loaded, setLoaded] = useState(false)
+  return (
+    <div className="relative" style={{ width, height }}>
+      {!loaded && (
+        <div className={cn('absolute inset-0 bg-muted/40 rounded-lg animate-pulse', className)} />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        width={width}
+        height={height}
+        onLoad={() => setLoaded(true)}
+        onClick={onClick}
+        className={cn(className, 'transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0')}
+      />
+    </div>
+  )
+}
+
 export default function InventoryView() {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const products        = useAppStore(state => state.products)
@@ -48,6 +75,7 @@ export default function InventoryView() {
   const [search, setSearch]             = useState('')
   const [printProduct, setPrintProduct] = useState<any | null>(null)
   const [viewProduct, setViewProduct]   = useState<any | null>(null)
+  const [cloneProduct, setCloneProduct] = useState<any | null>(null)
   const [currentPage, setCurrentPage]   = useState(1)
   const [itemsPerPage]                  = useState(10)
   const [previewImages, setPreviewImages] = useState<string[]>([])
@@ -354,13 +382,12 @@ export default function InventoryView() {
                         <TableCell className="pl-4">
                           {firstImage ? (
                             <div className="relative group/img w-max">
-                              <img
+                              <FadeImage
                                 src={firstImage}
                                 alt={product.name}
-                                loading="lazy"
                                 width={48}
                                 height={48}
-                                className="h-12 w-12 object-cover rounded-lg shadow-sm border border-border/50 hover:opacity-80 transition-opacity cursor-pointer"
+                                className="h-12 w-12 object-cover rounded-lg shadow-sm border border-border/50 hover:opacity-80 cursor-pointer"
                                 onClick={() => setPreviewImages(allImages)}
                               />
                               {extraCount > 0 && (
@@ -445,6 +472,9 @@ export default function InventoryView() {
                               </Button>
                             }
                           />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-emerald-500/10" onClick={() => setCloneProduct(product)} title="Clone Product">
+                            <Copy className="h-4 w-4 text-emerald-500" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" onClick={() => handleDelete(product.id)} title="Delete Product">
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -482,10 +512,9 @@ export default function InventoryView() {
                       <div className="shrink-0 relative">
                         {firstImage ? (
                           <div className="relative">
-                              <img
+                              <FadeImage
                                 src={firstImage}
                                 alt={product.name}
-                                loading="lazy"
                                 width={64}
                                 height={64}
                                 className="h-16 w-16 object-cover rounded-lg border shadow-sm cursor-pointer"
@@ -554,6 +583,9 @@ export default function InventoryView() {
                                 <Button variant="ghost" size="sm" className="justify-start hover:bg-blue-500/10 hover:text-blue-500 w-full" onClick={() => setPrintProduct(product)}>
                                   <QrCode className="mr-2 h-4 w-4 text-blue-500" /> Labels
                                 </Button>
+                                <Button variant="ghost" size="sm" className="justify-start hover:bg-emerald-500/10 hover:text-emerald-500 w-full" onClick={() => setCloneProduct(product)}>
+                                  <Copy className="mr-2 h-4 w-4 text-emerald-500" /> Clone
+                                </Button>
                                 <Button variant="ghost" size="sm" className="justify-start hover:bg-red-500/10 hover:text-red-500 w-full" onClick={() => handleDelete(product.id)}>
                                   <Trash2 className="mr-2 h-4 w-4 text-red-500" /> Delete
                                 </Button>
@@ -599,6 +631,14 @@ export default function InventoryView() {
           </div>
         )}
       </Card>
+
+      {/* Clone Product Modal (headless — no trigger, controlled externally) */}
+      <ProductModal
+        cloneData={cloneProduct}
+        open={!!cloneProduct}
+        onOpenChange={(open) => { if (!open) setCloneProduct(null) }}
+        onSuccess={() => { setCloneProduct(null); loadProducts() }}
+      />
 
       {/* View Product Dialog */}
       <Dialog open={!!viewProduct} onOpenChange={(open) => !open && setViewProduct(null)}>
