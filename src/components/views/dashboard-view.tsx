@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Package, ShoppingCart, Users, DollarSign, TrendingUp,
-  ArrowUpRight, ArrowDownRight, Loader2, Banknote,
+  ArrowUpRight, ArrowDownRight, Loader2, Banknote, RefreshCw,
 } from "lucide-react"
 import { useAppStore } from "@/store/use-app-store"
 import { useEffect, useState } from "react"
@@ -32,12 +32,11 @@ export default function DashboardView() {
   const setCustomers   = useAppStore((state) => state.setCustomers)
   const currentView    = useAppStore((state) => state.currentView)
   
-  const [stats, setStats] = useState<Stats | null>(null)
+  const [stats, setStats]   = useState<Stats | null>(null)
   const [loading, setLoading] = useState(products.length === 0 || customers.length === 0)
 
-  useEffect(() => {
-    async function loadStats() {
-      if (products.length === 0 || customers.length === 0) setLoading(true)
+  async function loadStats() {
+      setLoading(true)
       try {
         const [productsRes, customersRes, ordersRes] = await Promise.all([
           getProducts(),
@@ -60,7 +59,6 @@ export default function DashboardView() {
           acc + p.variants.reduce((a2: number, v: any) =>
             a2 + (v.inventory?.reduce((a3: number, i: any) => a3 + i.quantity, 0) || 0), 0), 0)
 
-        // Total cost = costPrice × quantity for each variant at each inventory location
         const totalCostPrice = productsData.reduce((acc: number, p: any) =>
           acc + p.variants.reduce((a2: number, v: any) => {
             const qty = v.inventory?.reduce((a3: number, i: any) => a3 + i.quantity, 0) || 0
@@ -69,7 +67,6 @@ export default function DashboardView() {
 
         const totalRevenue = ordersData.reduce((s: number, o: any) => s + Number(o.totalAmount), 0)
 
-        // Top 5 products by stock
         const topProducts = [...productsData]
           .map((p: any) => ({
             name: p.name,
@@ -93,9 +90,9 @@ export default function DashboardView() {
         console.error('Dashboard load error', e)
       }
       setLoading(false)
-    }
-    loadStats()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }
+
+  useEffect(() => { loadStats() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Silent refresh — debounced 400ms
   useEffect(() => {
@@ -153,9 +150,21 @@ export default function DashboardView() {
           </h1>
           <p className="text-muted-foreground mt-1">Live overview of your store's performance.</p>
         </div>
-        <Button size="lg" className="shadow-lg hover:shadow-primary/25 transition-all" onClick={() => setCurrentView('pos')}>
-          <ShoppingCart className="mr-2 h-5 w-5" /> New Sale
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => loadStats()}
+            disabled={loading}
+            className="h-9"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button size="lg" className="shadow-lg hover:shadow-primary/25 transition-all" onClick={() => setCurrentView('pos')}>
+            <ShoppingCart className="mr-2 h-5 w-5" /> New Sale
+          </Button>
+        </div>
       </div>
 
       {/* Stat Cards */}

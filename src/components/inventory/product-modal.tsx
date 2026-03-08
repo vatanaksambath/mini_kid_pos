@@ -71,6 +71,7 @@ export default function ProductModal({ product, cloneData, open: externalOpen, o
   const open = externalOpen !== undefined ? externalOpen : internalOpen
   const setOpen = onOpenChange || setInternalOpen
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
 
   // Refs
   const variantScrollRef = useRef<HTMLDivElement>(null)
@@ -174,6 +175,7 @@ export default function ProductModal({ product, cloneData, open: externalOpen, o
 
   useEffect(() => {
     if (open) {
+      setSettingsLoaded(false)
       const fetchData = async () => {
         const [catRes, brandRes, sizeRes, colorRes, sourceRes] = await Promise.all([
           getCategories(), getBrands(), getSizes(), getColors(), getProductSources()
@@ -183,6 +185,7 @@ export default function ProductModal({ product, cloneData, open: externalOpen, o
         if (sizeRes.success) setSizes(sizeRes.data || [])
         if (colorRes.success) setColors(colorRes.data || [])
         if (sourceRes.success) setSources(sourceRes.data || [])
+        setSettingsLoaded(true)
       }
       fetchData()
     }
@@ -535,6 +538,14 @@ export default function ProductModal({ product, cloneData, open: externalOpen, o
             )}
           </div>
 
+
+          {!settingsLoaded ? (
+            <div className="border rounded-lg p-4 space-y-3 bg-muted/5">
+              <div className="h-5 w-44 bg-muted rounded animate-pulse" />
+              <div className="h-10 w-full bg-muted/60 rounded animate-pulse" />
+              <div className="h-10 w-full bg-muted/60 rounded animate-pulse" />
+            </div>
+          ) : (
           <div className="border rounded-lg p-3 sm:p-4 space-y-4 mb-4 sm:mb-0 bg-muted/5 sm:bg-transparent">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <h3 className="font-semibold flex items-center text-sm sm:text-base">
@@ -711,7 +722,8 @@ export default function ProductModal({ product, cloneData, open: externalOpen, o
               ))}
             </div>
           </div>
-          
+          )}
+
           {/* Mobile sticky footer */}
           <div className="fixed sm:relative bottom-0 left-0 right-0 p-4 sm:p-0 bg-background/95 backdrop-blur border-t sm:border-none sm:bg-transparent z-20 flex flex-col sm:flex-row gap-2 mt-auto sm:mt-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] sm:shadow-none">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto h-11 sm:h-9">Cancel</Button>

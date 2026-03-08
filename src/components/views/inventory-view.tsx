@@ -454,7 +454,9 @@ export default function InventoryView() {
                       )}
                       {visibleColumns.stockDate && (
                         <TableCell className="text-sm">
-                          {product.stockDate ? parseUTCDate(product.stockDate).toLocaleDateString() : 'N/A'}
+                          {product.stockDate
+                            ? (() => { const d = parseUTCDate(product.stockDate); return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}` })()
+                            : 'N/A'}
                         </TableCell>
                       )}
                       <TableCell className="text-center">
