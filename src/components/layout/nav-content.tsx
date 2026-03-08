@@ -4,6 +4,7 @@ import { LayoutDashboard, Package, ShoppingCart, Users, Settings, History, BarCh
 import { cn } from "@/lib/utils"
 import { useAppStore, ViewType } from "@/store/use-app-store"
 import { useState, useEffect } from "react"
+import { CHANGELOG } from "@/lib/changelog"
 
 const navItems: { name: string; view: ViewType; icon: any }[] = [
   { name: "Dashboard", view: "dashboard", icon: LayoutDashboard },
@@ -68,7 +69,7 @@ export default function NavContent({ onNavItemClick }: NavContentProps) {
         })}
       </nav>
       <div className="p-4 border-t border-sidebar-border/50 text-xs text-muted-foreground flex flex-col space-y-1 items-center justify-center opacity-60">
-        <div className="font-medium tracking-wide">Version 1.0.0</div>
+        <div className="font-medium tracking-wide">Version {CHANGELOG[0]?.version ?? '1.0.0'}</div>
         {mounted ? (
           <div className="tabular-nums font-medium">
             {formattedDateTime}
