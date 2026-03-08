@@ -6,15 +6,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
-import { Save, Upload, Store, Phone, MapPin, CreditCard, MessageSquare, RefreshCw } from 'lucide-react'
+import { Save, Upload, Store, Phone, MapPin, CreditCard, MessageSquare, RefreshCw, X, ZoomIn } from 'lucide-react'
 import { useState, useEffect, useTransition } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useAppStore } from '@/store/use-app-store'
 
 export default function ReceiptTemplateForm() {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const [isPending, startTransition] = useTransition()
   const [loading, setLoading] = useState(true)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
 
   const [shopName, setShopName] = useState('')
   const [address, setAddress] = useState('')
@@ -218,22 +220,68 @@ export default function ReceiptTemplateForm() {
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Bank QR Code Image (KHQR)</Label>
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('qr-upload')?.click()}>
+              <div className="flex flex-col gap-2">
+                <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => document.getElementById('qr-upload')?.click()}>
                   <Upload className="h-3 w-3 mr-1" /> Upload QR
                 </Button>
                 <input id="qr-upload" type="file" accept="image/*" className="hidden" onChange={handleImageFile(setBankQrImageUrl, 300, 300, 0.85)} />
-                {bankQrImageUrl && <img src={bankQrImageUrl} alt="Bank QR" className="h-12 w-12 object-contain rounded border" />}
+                {bankQrImageUrl && (
+                  <div className="relative w-fit group">
+                    <img
+                      src={bankQrImageUrl}
+                      alt="Bank QR"
+                      onClick={() => setPreviewImage(bankQrImageUrl)}
+                      className="h-24 w-24 object-contain rounded-lg border shadow-sm cursor-zoom-in hover:opacity-90 transition-opacity bg-white p-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setBankQrImageUrl('')}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewImage(bankQrImageUrl)}
+                      className="absolute bottom-1 right-1 bg-black/50 text-white rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ZoomIn className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Shop Logo</Label>
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('logo-upload')?.click()}>
+              <div className="flex flex-col gap-2">
+                <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => document.getElementById('logo-upload')?.click()}>
                   <Upload className="h-3 w-3 mr-1" /> Upload Logo
                 </Button>
                 <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={handleImageFile(setLogoUrl, 200, 200, 0.75)} />
-                {logoUrl && <img src={logoUrl} alt="Logo" className="h-10 w-10 object-contain rounded border" />}
+                {logoUrl && (
+                  <div className="relative w-fit group">
+                    <img
+                      src={logoUrl}
+                      alt="Shop Logo"
+                      onClick={() => setPreviewImage(logoUrl)}
+                      className="h-20 w-20 object-contain rounded-lg border shadow-sm cursor-zoom-in hover:opacity-90 transition-opacity bg-white p-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLogoUrl('')}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewImage(logoUrl)}
+                      className="absolute bottom-1 right-1 bg-black/50 text-white rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ZoomIn className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -253,6 +301,24 @@ export default function ReceiptTemplateForm() {
         </Button>
         {saved && <span className="text-sm text-green-600 font-medium">✓ Saved successfully</span>}
       </div>
+
+      {/* Image Lightbox */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent
+          className="max-w-lg p-2 bg-transparent border-none shadow-none text-center z-[100]"
+          aria-describedby={undefined}
+          onInteractOutside={() => setPreviewImage(null)}
+        >
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
+          {previewImage && (
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl mx-auto"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </form>
   )
 }

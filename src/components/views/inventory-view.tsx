@@ -65,8 +65,9 @@ function FadeImage({ src, alt, className, width, height, onClick }: {
 export default function InventoryView() {
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
   const products        = useAppStore(state => state.products)
-  const setProducts     = useAppStore(state => state.setProducts)
-  const currentView     = useAppStore(state => state.currentView)
+  const setProducts         = useAppStore(state => state.setProducts)
+  const currentView         = useAppStore(state => state.currentView)
+  const loadSettingsCache   = useAppStore(state => state.loadSettingsCache)
   
   const [categories, setCategories]     = useState<any[]>([])
   const [brands, setBrands]             = useState<any[]>([])
@@ -114,9 +115,14 @@ export default function InventoryView() {
     setLoading(false)
   }, [products.length, setProducts])
 
-  // Initial load
+  // Initial load — products + filter dropdowns + pre-warm settings cache in parallel
   useEffect(() => {
-    Promise.all([loadProducts(), getCategories(), getBrands()]).then(([, catRes, brandRes]) => {
+    Promise.all([
+      loadProducts(),
+      getCategories(),
+      getBrands(),
+      loadSettingsCache(), // pre-warm so modal opens instantly
+    ]).then(([, catRes, brandRes]) => {
       if (catRes.success) setCategories(catRes.data || [])
       if (brandRes.success) setBrands(brandRes.data || [])
     })

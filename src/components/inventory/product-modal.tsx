@@ -71,6 +71,8 @@ export default function ProductModal({ product, cloneData, open: externalOpen, o
   const open = externalOpen !== undefined ? externalOpen : internalOpen
   const setOpen = onOpenChange || setInternalOpen
   const showGlobalAlert = useAppStore(state => state.showGlobalAlert)
+  const settingsCache    = useAppStore(state => state.settingsCache)
+  const loadSettingsCache = useAppStore(state => state.loadSettingsCache)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
 
   // Refs
@@ -174,22 +176,19 @@ export default function ProductModal({ product, cloneData, open: externalOpen, o
   }, [product, cloneData, open])
 
   useEffect(() => {
-    if (open) {
-      setSettingsLoaded(false)
-      const fetchData = async () => {
-        const [catRes, brandRes, sizeRes, colorRes, sourceRes] = await Promise.all([
-          getCategories(), getBrands(), getSizes(), getColors(), getProductSources()
-        ])
-        if (catRes.success) setCategories(catRes.data || [])
-        if (brandRes.success) setBrands(brandRes.data || [])
-        if (sizeRes.success) setSizes(sizeRes.data || [])
-        if (colorRes.success) setColors(colorRes.data || [])
-        if (sourceRes.success) setSources(sourceRes.data || [])
-        setSettingsLoaded(true)
-      }
-      fetchData()
-    }
-  }, [open])
+    if (!open) return
+    setSettingsLoaded(false)
+    loadSettingsCache().then(() => {
+      // Populate local state from cache — instant if already loaded
+      const c = useAppStore.getState().settingsCache
+      setCategories(c.categories)
+      setBrands(c.brands)
+      setSizes(c.sizes)
+      setColors(c.colors)
+      setSources(c.sources)
+      setSettingsLoaded(true)
+    })
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])

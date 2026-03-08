@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/layout/nav";
@@ -21,12 +21,15 @@ export const metadata: Metadata = {
   title: "MiniKid POS",
   description: "Modern Point of Sale for Clothing Retail",
   manifest: "/manifest.json",
-  themeColor: "#4f46e5",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "MiniKid POS",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#4f46e5",
 };
 
 export const dynamic = 'force-dynamic';
